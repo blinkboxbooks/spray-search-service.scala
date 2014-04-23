@@ -24,25 +24,20 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
 
   val route =
     handleRejections(invalidParamHandler) {
-      pathPrefix("search") {
-        pathPrefix("books") {
-          get {
-            pathEnd {
-              parameter('q) { query =>
-                complete(StatusCodes.OK, s"Search query: $query")
-              }
-            } ~
-              path(IntNumber / "similar") { id =>
-                complete(s"Search for books similar to book with ID $id")
-              }
-          }
+      get {
+        pathPrefix("search" / "books") {
+          pathEnd {
+            parameter('q) { query =>
+              complete(StatusCodes.OK, s"Search query: $query")
+            }
+          } ~
+            path(IntNumber / "similar") { id =>
+              complete(s"Search for books similar to book with ID $id")
+            }
         } ~
-          path("suggestions") {
-            get {
-                complete(StatusCodes.OK, s"Suggestions query")
-              parameter('q) { query =>
-                complete(StatusCodes.OK, s"Suggestions query: $query")
-              }
+          path("search" / "suggestions") {
+            parameter('q) { query =>
+              complete(StatusCodes.OK, s"Suggestions query: $query")
             }
           }
       }

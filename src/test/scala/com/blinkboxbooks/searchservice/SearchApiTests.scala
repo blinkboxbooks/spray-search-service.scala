@@ -68,15 +68,13 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
   test("search with missing query parameter") {
     Get("search/books") ~> route ~> check {
-      handled === true
-      status === BadRequest
+      handled === false
     }
   }
 
   test("search with missing query parameter and one valid parameter") {
     Get("search/books?limit=10") ~> route ~> check {
-      handled === true
-      status === BadRequest
+      handled === false
     }
   }
 
