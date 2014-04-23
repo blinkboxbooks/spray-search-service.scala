@@ -36,10 +36,22 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       status === Success
 
       // TODO: Check count
-      // TODO: Check 
       // checking if the json response is correct
       // TODO! body.data.asString === write(expectedPromotion)
+      // TODO: Check page links
     }
+  }
+
+  test("links for first page") {
+    fail("TODO!")
+  }
+
+  test("links for middle page") {
+    fail("TODO!")
+  }
+
+  test("links for last page") {
+    fail("TODO!")
   }
 
   test("search for book with all parameters") {

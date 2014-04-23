@@ -24,6 +24,35 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
   implicit val timeout = Timeout(5 seconds)
   implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
 
+  abstract class Entity(
+    `type`: Option[String],
+    id: String,
+    title: String)
+
+  case class Author(
+    `type`: Option[String],
+    id: String,
+    title: String)
+    extends Entity(`type`, id, title)
+
+  case class Book(
+    `type`: Option[String],
+    id: String,
+    title: String,
+    authors: List[String])
+    extends Entity(`type`, id, title)
+
+  case class SuggestionsResult(
+    `type`: String,
+    items: List[Entity])
+
+  case class SearchResult(
+    `type`: String,
+    id: String,
+    numberOfResults: Int,
+    books: List[Book],
+    links: Seq[PageLink])
+
   val route = handleRejections(invalidParamHandler) {
     addBBBMediaTypeToResponse {
       get {
@@ -31,24 +60,58 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
           pathEnd {
             parameters('q, 'offset.as[Int] ? 0, 'count.as[Int] ? defaultCount, 'order ?, 'desc.as[Boolean] ? true) {
               (query, offset, count, order, desc) =>
-                complete(StatusCodes.OK, s"Search query: $query, offset=$offset, count=$count, order=$order, desc=$desc")
+                val foundBooks = List(
+                  Book(None, "9781443414005", "Bleak House", List("Charles Dickens")),
+                  Book(None, "9780141920061", "Hard Times", List("Charles Dickens")))
+                complete(SearchResult("urn:blinkboxbooks:schema:search",
+                  query, foundBooks.size, foundBooks,
+                  links(foundBooks, foundBooks.size, offset, count, "search/books")))
             }
           } ~
             path(IntNumber / "similar") { id =>
               parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount) {
                 (offset, count) =>
-                  complete(s"Search for books similar to book with ID $id, offset=$offset, count=$count")
+                  val foundBooks = List(
+                    Book(None, "9781443414005", "Block House", List("Charles Smith")),
+                    Book(None, "9780141920061", "Happy Times", List("Charles Smith")))
+                  complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
+                    id.toString, foundBooks.size, foundBooks,
+                    links(foundBooks, foundBooks.size, offset, count, s"search/books/$id/similar")))
               }
             }
         } ~
           path("search" / "suggestions") {
             parameters('q, 'offset.as[Int] ? 0, 'count.as[Int] ? defaultCount) {
               (query, offset, count) =>
-                complete(StatusCodes.OK, s"Suggestions query: $query, offset=$offset, count=$count")
+                complete(SuggestionsResult("urn:blinkboxbooks:schema:list", List(
+                  Book(Some("urn:blinkboxbooks:schema:suggestion:book"), "9781443414005", "Bleak House", List("Charles Dickens")),
+                  Author(Some("urn:blinkboxbooks:schema:suggestion:contributor"), "1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
+                  Book(Some("urn:blinkboxbooks:schema:suggestion:book"), "9780141920061", "Hard Times", List("Charles Dickens")))))
             }
           }
       }
     }
+  }
+
+  // TODO: Could go somewhere common?
+  def links(items: Seq[Book], numberOfResults: Int, offset: Int, count: Int, baseUrl: String) = {
+
+    val hasMore = numberOfResults > offset + count
+
+    val thisPageLink = s"$baseUrl?count=$count&offset=$offset"
+    val thisPage = Some(PageLink("this", thisPageLink))
+
+    val previousPage = if (offset > 0) {
+      val link = s"$baseUrl?count=$count&offset=${(offset - count).max(0)}"
+      Some(PageLink("previous", link))
+    } else None
+
+    val nextPage = if (hasMore) {
+      val link = s"$baseUrl?count=$count&offset=${offset + count}"
+      Some(PageLink("next", link))
+    } else None
+
+    List(thisPage, previousPage, nextPage).flatten
   }
 
 }

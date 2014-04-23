@@ -47,31 +47,8 @@ trait BlinkboxHelpers {
     validate(offset >= 0, "Offset must not be less than 0")
 
   // Case classes for response schema.
-  case class ResultList[T](`type`: String, numberOfResults: Int, offset: Int, count: Int, items: List[T], links: Option[List[PageLink]])
   case class PageLink(rel: String, href: String)
 
-  // assumes we requested count + 1 promotions from the database. We use this to work out if we are serving the last 'page'
-  def toListResponse[T](items: List[T], offset: Int, count: Int, baseUrl: String): ResultList[T] = {
-
-    val hasMore = items.size > count
-    val numberOfResults = if (hasMore) (items.size - 1).max(0) else items.size
-
-    val previousPage = if (offset > 0) {
-      val link = s"$baseUrl?count=${count.min(offset)}&offset=${(offset - count).max(0)}"
-      Some(PageLink("previous", link))
-    } else None
-
-    val nextPage = if (hasMore) {
-      val link = s"$baseUrl?count=$count&offset=${offset + count}"
-      Some(PageLink("next", link))
-    } else None
-
-    val links = List(previousPage, nextPage).flatten match {
-      case List() => None
-      case list => Some(list)
-    }
-    ResultList("urn:blinkboxbooks:schema:list", numberOfResults, offset, count, items.take(numberOfResults), links)
-  }
 
 }
 
