@@ -3,17 +3,18 @@ package com.blinkboxbooks.searchservice
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.json4s.jackson.Serialization.write
+import org.junit.runner.RunWith
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, FunSuite }
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.junit.JUnitRunner
 import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
-import org.junit.runner.RunWith
 
 @RunWith(classOf[JUnitRunner])
 class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTest with MockitoSugar with SearchApi {
 
   override val model = mock[SearchModel]
+  override val defaultCount = 5
 
   override implicit def actorRefFactory = system
 
@@ -93,15 +94,31 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   test("simple query for suggestions") {
     Get("/search/suggestions?q=foo") ~> route ~> check {
       status === Success
-      fail("TODO: Check count")
+      fail("TODO: Check query parameters in request")
       fail("TODO: Check returned JSON")
     }
   }
 
-  test("query for similar books") {
+  test("simple query for suggestions with query parameters") {
+    Get("/search/suggestions?q=foo&offset=5&count=15&order=PRICE&desc=false") ~> route ~> check {
+      status === Success
+      fail("TODO: Check query parameters in request")
+      fail("TODO: Check returned JSON")
+    }
+  }
+
+  test("simple query for similar books") {
     Get("/search/books/12345/similar") ~> route ~> check {
       status === Success
-      fail("TODO: Check count")
+      fail("TODO: Check offset and count in request")
+      fail("TODO: Check returned JSON")
+    }
+  }
+
+  test("query for similar books with query parameters") {
+    Get("/search/books/12345/similar?offset=5&count=15") ~> route ~> check {
+      status === Success
+      fail("TODO: Check offset and count in request")
       fail("TODO: Check returned JSON")
     }
   }

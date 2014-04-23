@@ -30,7 +30,6 @@ trait BlinkboxHelpers {
     println("*** " + value)
     false
   }
-
   val invalidParamHandler1 = RejectionHandler {
     case MalformedQueryParamRejection(paramName, _, _) :: _ =>
       complete(BadRequest, s"Invalid value for $paramName parameter")

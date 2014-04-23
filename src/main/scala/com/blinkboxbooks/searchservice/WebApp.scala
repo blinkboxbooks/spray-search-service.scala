@@ -13,7 +13,8 @@ trait Api extends RouteConcatenation {
   this: Core =>
 
   val model = new SearchModel() {}
-  val service = system.actorOf(Props(new SearchService(model)), "search-service")
+  val defaultCount = 10 // TODO: Get from config.
+  val service = system.actorOf(Props(new SearchService(model, defaultCount)), "search-service")
 }
 
 trait Web {
