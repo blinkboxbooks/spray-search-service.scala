@@ -5,6 +5,7 @@ import org.json4s.jackson.Serialization
 import org.json4s.NoTypeHints
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
+import ExecutionContext.Implicits.global
 import spray.http._
 import spray.http.HttpHeaders.RawHeader
 import spray.httpx.Json4sJacksonSupport
@@ -24,24 +25,6 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
   implicit val timeout = Timeout(5 seconds)
   implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
 
-  abstract class Entity(
-    `type`: Option[String],
-    id: String,
-    title: String)
-
-  case class Author(
-    `type`: Option[String],
-    id: String,
-    title: String)
-    extends Entity(`type`, id, title)
-
-  case class Book(
-    `type`: Option[String],
-    id: String,
-    title: String,
-    authors: List[String])
-    extends Entity(`type`, id, title)
-
   case class SuggestionsResult(
     `type`: String,
     items: List[Entity])
@@ -60,33 +43,33 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
           pathEnd {
             parameters('q, 'offset.as[Int] ? 0, 'count.as[Int] ? defaultCount, 'order ?, 'desc.as[Boolean] ? true) {
               (query, offset, count, order, desc) =>
-                val foundBooks = List(
-                  Book(None, "9781443414005", "Bleak House", List("Charles Dickens")),
-                  Book(None, "9780141920061", "Hard Times", List("Charles Dickens")))
-                complete(SearchResult("urn:blinkboxbooks:schema:search",
-                  query, foundBooks.size, foundBooks,
-                  links(foundBooks, foundBooks.size, offset, count, "search/books")))
+                val result = model.search(query, offset, count, order, desc)
+                onSuccess(result) { foundBooks =>
+                  complete(SearchResult("urn:blinkboxbooks:schema:search",
+                    query, foundBooks.size, foundBooks,
+                    links(foundBooks, foundBooks.size, offset, count, "search/books")))
+                }
             }
           } ~
-            path(IntNumber / "similar") { id =>
+            path(Segment / "similar") { id =>
               parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount) {
                 (offset, count) =>
-                  val foundBooks = List(
-                    Book(None, "9781443414005", "Block House", List("Charles Smith")),
-                    Book(None, "9780141920061", "Happy Times", List("Charles Smith")))
-                  complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
-                    id.toString, foundBooks.size, foundBooks,
-                    links(foundBooks, foundBooks.size, offset, count, s"search/books/$id/similar")))
+                  val result = model.findSimilar(id, offset, count)
+                  onSuccess(result) { foundBooks =>
+                    complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
+                      id, foundBooks.size, foundBooks,
+                      links(foundBooks, foundBooks.size, offset, count, s"search/books/$id/similar")))
+                  }
               }
             }
         } ~
           path("search" / "suggestions") {
             parameters('q, 'offset.as[Int] ? 0, 'count.as[Int] ? defaultCount) {
               (query, offset, count) =>
-                complete(SuggestionsResult("urn:blinkboxbooks:schema:list", List(
-                  Book(Some("urn:blinkboxbooks:schema:suggestion:book"), "9781443414005", "Bleak House", List("Charles Dickens")),
-                  Author(Some("urn:blinkboxbooks:schema:suggestion:contributor"), "1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
-                  Book(Some("urn:blinkboxbooks:schema:suggestion:book"), "9780141920061", "Hard Times", List("Charles Dickens")))))
+                val result = model.suggestions(query, offset, count)
+                onSuccess(result) { foundBooks =>
+                  complete(SuggestionsResult("urn:blinkboxbooks:schema:list", foundBooks))
+                }
             }
           }
       }

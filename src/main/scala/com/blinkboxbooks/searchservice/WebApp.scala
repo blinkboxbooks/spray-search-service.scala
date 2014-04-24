@@ -5,14 +5,10 @@ import akka.io.IO
 import spray.can.Http
 import spray.routing._
 
-trait SearchModel {
-  // TODO: Placeholder for the business logic of search.
-}
-
 trait Api extends RouteConcatenation {
   this: Core =>
 
-  val model = new SearchModel() {}
+  val model = new SolrSearchModel()
   val defaultCount = 10 // TODO: Get from config.
   val service = system.actorOf(Props(new SearchService(model, defaultCount)), "search-service")
 }
