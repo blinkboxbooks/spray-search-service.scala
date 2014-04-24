@@ -15,6 +15,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
   override val model = mock[SearchModel]
   override val defaultCount = 5
+  override val baseUrl = "service/search"
 
   override implicit def actorRefFactory = system
 

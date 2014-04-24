@@ -10,7 +10,8 @@ trait Api extends RouteConcatenation {
 
   val model = new SolrSearchModel()
   val defaultCount = 10 // TODO: Get from config.
-  val service = system.actorOf(Props(new SearchService(model, defaultCount)), "search-service")
+  val baseUrl = "search" // TODO: Get from config.
+  val service = system.actorOf(Props(new SearchService(model, defaultCount, baseUrl)), "search-service")
 }
 
 trait Web {

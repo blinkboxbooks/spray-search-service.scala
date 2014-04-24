@@ -24,19 +24,12 @@ trait BlinkboxHelpers {
     binary = true, // binary as the encoding is defined as utf-8 by the json spec
     compressible = true))
 
-  /** TODO: Remove this debugging code. */
-  val debuggerPf: PartialFunction[List[Rejection], Route] = { case value @ _ if debug(value) => ??? }
-  def debug(value: Any) = {
-    println("*** " + value)
-    false
-  }
-  val invalidParamHandler1 = RejectionHandler {
+  val invalidParamHandler = RejectionHandler {
     case MalformedQueryParamRejection(paramName, _, _) :: _ =>
       complete(BadRequest, s"Invalid value for $paramName parameter")
     case MissingQueryParamRejection(paramName) :: _ =>
       complete(BadRequest, s"Missing value for $paramName parameter")
   }
-  val invalidParamHandler = debuggerPf orElse invalidParamHandler1
 
   def removeCharsetEncoding(entity: HttpEntity) = entity.flatMap(e => HttpEntity(e.contentType.withoutDefinedCharset, e.data))
 
@@ -47,8 +40,31 @@ trait BlinkboxHelpers {
     validate(offset >= 0, "Offset must not be less than 0")
 
   // Case classes for response schema.
+
   case class PageLink(rel: String, href: String)
 
+  /**
+   * Generate links for use in
+   */
+  def links(numberOfResults: Int, offset: Int, count: Int, linkBaseUrl: String) = {
+
+    val hasMore = numberOfResults > offset + count
+
+    val thisPageLink = s"$linkBaseUrl?count=$count&offset=$offset"
+    val thisPage = Some(PageLink("this", thisPageLink))
+
+    val previousPage = if (offset > 0) {
+      val link = s"$linkBaseUrl?count=$count&offset=${(offset - count).max(0)}"
+      Some(PageLink("previous", link))
+    } else None
+
+    val nextPage = if (hasMore) {
+      val link = s"$linkBaseUrl?count=$count&offset=${offset + count}"
+      Some(PageLink("next", link))
+    } else None
+
+    List(thisPage, previousPage, nextPage).flatten
+  }
 
 }
 

@@ -21,6 +21,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
   // Abstract values, to be provided by concrete implementations.
   val model: SearchModel
   val defaultCount: Int
+  val baseUrl: String
 
   implicit val timeout = Timeout(5 seconds)
   implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
@@ -47,7 +48,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
                 onSuccess(result) { foundBooks =>
                   complete(SearchResult("urn:blinkboxbooks:schema:search",
                     query, foundBooks.size, foundBooks,
-                    links(foundBooks, foundBooks.size, offset, count, "search/books")))
+                    links(foundBooks.size, offset, count, s"$baseUrl/books")))
                 }
             }
           } ~
@@ -58,7 +59,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
                   onSuccess(result) { foundBooks =>
                     complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
                       id, foundBooks.size, foundBooks,
-                      links(foundBooks, foundBooks.size, offset, count, s"search/books/$id/similar")))
+                      links(foundBooks.size, offset, count, s"$baseUrl/books/$id/similar")))
                   }
               }
             }
@@ -76,33 +77,13 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
     }
   }
 
-  // TODO: Could go somewhere common?
-  def links(items: Seq[Book], numberOfResults: Int, offset: Int, count: Int, baseUrl: String) = {
-
-    val hasMore = numberOfResults > offset + count
-
-    val thisPageLink = s"$baseUrl?count=$count&offset=$offset"
-    val thisPage = Some(PageLink("this", thisPageLink))
-
-    val previousPage = if (offset > 0) {
-      val link = s"$baseUrl?count=$count&offset=${(offset - count).max(0)}"
-      Some(PageLink("previous", link))
-    } else None
-
-    val nextPage = if (hasMore) {
-      val link = s"$baseUrl?count=$count&offset=${offset + count}"
-      Some(PageLink("next", link))
-    } else None
-
-    List(thisPage, previousPage, nextPage).flatten
-  }
-
 }
 
 /**
  * Actor implementing a search service that delegates requests to a given model.
  */
-class SearchService(override val model: SearchModel, override val defaultCount: Int) extends HttpServiceActor with SearchApi {
+class SearchService(override val model: SearchModel, override val defaultCount: Int, override val baseUrl: String)
+  extends HttpServiceActor with SearchApi {
 
   def receive = runRoute(route)
 
