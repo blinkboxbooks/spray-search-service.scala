@@ -15,6 +15,8 @@ trait BlinkboxHelpers {
 
   this: HttpService =>
 
+  // Request directives.
+
   /**
    * Common media type.
    */
@@ -31,20 +33,29 @@ trait BlinkboxHelpers {
       complete(BadRequest, s"Missing value for $paramName parameter")
   }
 
+  // Response directives.
+
   def removeCharsetEncoding(entity: HttpEntity) = entity.flatMap(e => HttpEntity(e.contentType.withoutDefinedCharset, e.data))
 
   val addBBBMediaTypeToResponse = mapHttpResponseEntity(removeCharsetEncoding) &
     respondWithMediaType(`application/vnd.blinkboxbooks.data.v1+json`)
 
-  def validateCountAndOffset(count: Int, offset: Int) = validate(count >= 1 && count < 100, "Count must be between 1 and 100") &
-    validate(offset >= 0, "Offset must not be less than 0")
+  // Routing directives.
+
+  /** Directive that extracts standard 'offset' and 'count' parameters. */
+  def paged(defaultCount: Int) = parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount)
+
+  /** Directive that validates standard 'offset' and 'count' parameters. */
+  def validateOffsetAndCount(offset: Int, count: Int) =
+    validate(offset >= 0, "Offset must be 0 or greater") &
+      validate(count > 0, "Count must be greater than 0")
 
   // Case classes for response schema.
 
   case class PageLink(rel: String, href: String)
 
   /**
-   * Generate links for use in
+   * Generate links for use in paged results.
    */
   def links(numberOfResults: Int, offset: Int, count: Int, linkBaseUrl: String) = {
 
