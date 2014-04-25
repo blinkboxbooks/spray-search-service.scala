@@ -7,7 +7,7 @@ class SolrSearchModel extends SearchModel {
 
   // TODO: stubbed out data, replace with the real stuff...
 
-  override def search(query: String, offset: Int, count: Int, order: Option[String], desc: Boolean): Future[List[Book]] = Future {
+  override def search(query: String, offset: Int, count: Int, order: Option[String], desc: Boolean) = Future {
     List(
       new Book("9781443414005", "Bleak House", List("Charles Dickens")),
       new Book("9780141920061", "Hard Times", List("Charles Dickens"))).drop(offset).take(count)
