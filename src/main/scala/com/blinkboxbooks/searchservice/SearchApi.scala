@@ -70,8 +70,8 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
         } ~
           path("search" / "suggestions") {
             paged(defaultCount = 50) { (offset, count) =>
-              parameters('q) { query =>
-                validateOffsetAndCount(offset, count) {
+              validateOffsetAndCount(offset, count) {
+                parameters('q) { query =>
                   val result = model.suggestions(query, offset, count)
                   onSuccess(result) { foundBooks =>
                     complete(SuggestionsResult("urn:blinkboxbooks:schema:list", foundBooks))
