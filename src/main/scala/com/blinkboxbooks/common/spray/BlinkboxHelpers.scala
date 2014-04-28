@@ -1,15 +1,15 @@
 package com.blinkboxbooks.common.spray
 
-import spray.routing.RejectionHandler
 import spray.routing.HttpService
 import spray.routing.MissingQueryParamRejection
 import spray.routing.MalformedQueryParamRejection
+import spray.routing.RejectionHandler
+import spray.routing.Rejection
+import spray.routing.Route
 import spray.http.HttpEntity
 import spray.http.MediaTypes
 import spray.http.MediaType
 import spray.http.StatusCodes.BadRequest
-import spray.routing.Rejection
-import spray.routing.Route
 
 trait BlinkboxHelpers {
 
@@ -40,18 +40,13 @@ trait BlinkboxHelpers {
   val addBBBMediaTypeToResponse = mapHttpResponseEntity(removeCharsetEncoding) &
     respondWithMediaType(`application/vnd.blinkboxbooks.data.v1+json`)
 
-  // Routing directives.
+  /** Custom directive for extracting and validating page parameters (offset and count). */
+  def paged(defaultCount: Int) = parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount).as(Page)
 
-  /** Directive that extracts standard 'offset' and 'count' parameters. */
-  def paged(defaultCount: Int) = parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount)
-
-  /** Directive that validates standard 'offset' and 'count' parameters. */
-  def validateOffsetAndCount(offset: Int, count: Int) =
-    validate(offset >= 0, "Offset must be 0 or greater") &
-      validate(count > 0, "Count must be greater than 0")
-
-  // Case classes for response schema.
-
+  case class Page(offset: Int, count: Int) {
+    require(offset >= 0, "Offset must be 0 or greater")
+    require(count > 0, "Count must be greater than 0")
+  }
   case class PageLink(rel: String, href: String)
 
   /**

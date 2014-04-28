@@ -41,41 +41,34 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
       get {
         pathPrefix("search" / "books") {
           pathEnd {
-            paged(defaultCount = 50) { (offset, count) =>
-              validateOffsetAndCount(offset, count) {
-                parameters('q, 'order ?, 'desc.as[Boolean] ? true) {
-                  (query, order, desc) =>
-                    val result = model.search(query, offset, count, order, desc)
-                    onSuccess(result) { foundBooks =>
-                      complete(SearchResult("urn:blinkboxbooks:schema:search",
-                        query, foundBooks.size, foundBooks,
-                        links(foundBooks.size, offset, count, s"$baseUrl/books")))
-                    }
+            paged(defaultCount = 50) { page =>
+              parameters('q, 'order ?, 'desc.as[Boolean] ? true) { (query, order, desc) =>
+                val result = model.search(query, page.offset, page.count, order, desc)
+                onSuccess(result) { foundBooks =>
+                  complete(SearchResult("urn:blinkboxbooks:schema:search",
+                    query, foundBooks.size, foundBooks,
+                    links(foundBooks.size, page.offset, page.count, s"$baseUrl/books")))
                 }
               }
             }
           } ~
             path(Segment / "similar") { id =>
-              paged(defaultCount = 10) { (offset, count) =>
-                validateOffsetAndCount(offset, count) {
-                  val result = model.findSimilar(id, offset, count)
-                  onSuccess(result) { foundBooks =>
-                    complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
-                      id, foundBooks.size, foundBooks,
-                      links(foundBooks.size, offset, count, s"$baseUrl/books/$id/similar")))
-                  }
+              paged(defaultCount = 10) { page =>
+                val result = model.findSimilar(id, page.offset, page.count)
+                onSuccess(result) { foundBooks =>
+                  complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
+                    id, foundBooks.size, foundBooks,
+                    links(foundBooks.size, page.offset, page.count, s"$baseUrl/books/$id/similar")))
                 }
               }
             }
         } ~
           path("search" / "suggestions") {
-            paged(defaultCount = 50) { (offset, count) =>
-              validateOffsetAndCount(offset, count) {
-                parameters('q) { query =>
-                  val result = model.suggestions(query, offset, count)
-                  onSuccess(result) { foundBooks =>
-                    complete(SuggestionsResult("urn:blinkboxbooks:schema:list", foundBooks))
-                  }
+            paged(defaultCount = 50) { page =>
+              parameters('q) { query =>
+                val result = model.suggestions(query, page.offset, page.count)
+                onSuccess(result) { foundBooks =>
+                  complete(SuggestionsResult("urn:blinkboxbooks:schema:list", foundBooks))
                 }
               }
             }
