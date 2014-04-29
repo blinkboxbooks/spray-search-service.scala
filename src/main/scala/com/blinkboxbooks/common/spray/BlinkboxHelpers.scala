@@ -1,19 +1,21 @@
 package com.blinkboxbooks.common.spray
 
-import spray.routing.HttpService
-import spray.routing.MissingQueryParamRejection
-import spray.routing.MalformedQueryParamRejection
-import spray.routing.RejectionHandler
-import spray.routing.Rejection
-import spray.routing.Route
 import spray.http.HttpEntity
-import spray.http.MediaTypes
 import spray.http.MediaType
+import spray.http.MediaTypes
 import spray.http.StatusCodes.BadRequest
+import spray.routing.HttpService
+import spray.routing.MalformedQueryParamRejection
+import spray.routing.MissingQueryParamRejection
+import spray.routing.PathMatcher
+import spray.routing.Rejection
+import spray.routing.RejectionHandler
 
 trait BlinkboxHelpers {
 
   this: HttpService =>
+
+  import BlinkboxHelpers._
 
   // Request directives.
 
@@ -33,6 +35,9 @@ trait BlinkboxHelpers {
       complete(BadRequest, s"Missing value for $paramName parameter")
   }
 
+  /** Matcher for ISBN. */
+  val Isbn = """\d{13}""".r
+
   // Response directives.
 
   def removeCharsetEncoding(entity: HttpEntity) = entity.flatMap(e => HttpEntity(e.contentType.withoutDefinedCharset, e.data))
@@ -42,12 +47,6 @@ trait BlinkboxHelpers {
 
   /** Custom directive for extracting and validating page parameters (offset and count). */
   def paged(defaultCount: Int) = parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount).as(Page)
-
-  case class Page(offset: Int, count: Int) {
-    require(offset >= 0, "Offset must be 0 or greater")
-    require(count > 0, "Count must be greater than 0")
-  }
-  case class PageLink(rel: String, href: String)
 
   /**
    * Generate links for use in paged results.
@@ -61,7 +60,7 @@ trait BlinkboxHelpers {
 
     val previousPage = if (offset > 0) {
       val link = s"$linkBaseUrl?count=$count&offset=${(offset - count).max(0)}"
-      Some(PageLink("previous", link))
+      Some(PageLink("prev", link))
     } else None
 
     val nextPage = if (hasMore) {
@@ -74,3 +73,12 @@ trait BlinkboxHelpers {
 
 }
 
+object BlinkboxHelpers {
+
+  case class Page(offset: Int, count: Int) {
+    require(offset >= 0, "Offset must be 0 or greater")
+    require(count > 0, "Count must be greater than 0")
+  }
+  case class PageLink(rel: String, href: String)
+
+}

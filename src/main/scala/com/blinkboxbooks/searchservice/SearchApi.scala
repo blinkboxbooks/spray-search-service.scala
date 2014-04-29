@@ -32,13 +32,74 @@ trait SearchRoutes {
  */
 trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport with BlinkboxHelpers {
 
-  // Abstract values, to be provided by concrete implementations.
-  val model: SearchModel
+  import SearchApi._
+
+  // Abstract definitions, to be provided by concrete implementations.
   val baseUrl: String
+  def model: SearchModel
 
   implicit val timeout = Timeout(5 seconds)
   implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
 
+  override val searchForBooks =
+    pathSuffix("books") {
+      paged(defaultCount = 50) { page =>
+        parameters('q, 'order ?, 'desc.as[Boolean] ? true) { (query, order, desc) =>
+          val result = model.search(query, page.offset, page.count, order, desc)
+          onSuccess(result) { result =>
+            complete(SearchResult("urn:blinkboxbooks:schema:search",
+              query, result.numberOfResults, result.books,
+              links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books")))
+          }
+        }
+      }
+    }
+
+  override val similarBooks =
+    path("books" / Isbn / "similar") { id =>
+      paged(defaultCount = 10) { page =>
+        val result = model.findSimilar(id, page.offset, page.count)
+        onSuccess(result) { result =>
+          complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
+            id, result.numberOfResults, result.books,
+            links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books/$id/similar")))
+        }
+      }
+    }
+
+  override val searchSuggestions =
+    path("suggestions") {
+      paged(defaultCount = 50) { page =>
+        parameters('q) { query =>
+          val result = model.suggestions(query, page.offset, page.count)
+          onSuccess(result) { suggestions =>
+            complete(SuggestionsResult("urn:blinkboxbooks:schema:list", suggestions))
+          }
+        }
+      }
+    }
+
+  /**
+   * The overall route for the service.
+   */
+  val route = handleRejections(invalidParamHandler) {
+    addBBBMediaTypeToResponse {
+      get {
+        pathPrefix("search") {
+          searchForBooks ~ similarBooks ~ searchSuggestions
+        }
+      }
+    }
+  }
+
+}
+
+object SearchApi {
+
+  import com.blinkboxbooks.common.spray.BlinkboxHelpers.PageLink
+
+  // Value classes for responses.
+  
   case class SuggestionsResult(
     `type`: String,
     items: List[Entity])
@@ -49,54 +110,6 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
     numberOfResults: Int,
     books: List[Book],
     links: Seq[PageLink])
-
-  override val searchForBooks =
-    pathSuffix("books") {
-      paged(defaultCount = 50) { page =>
-        parameters('q, 'order ?, 'desc.as[Boolean] ? true) { (query, order, desc) =>
-          val result = model.search(query, page.offset, page.count, order, desc)
-          onSuccess(result) { foundBooks =>
-            complete(SearchResult("urn:blinkboxbooks:schema:search",
-              query, foundBooks.size, foundBooks,
-              links(foundBooks.size, page.offset, page.count, s"$baseUrl/books")))
-          }
-        }
-      }
-    }
-
-  override val similarBooks =
-    path("books" / Segment / "similar") { id =>
-      paged(defaultCount = 10) { page =>
-        val result = model.findSimilar(id, page.offset, page.count)
-        onSuccess(result) { foundBooks =>
-          complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
-            id, foundBooks.size, foundBooks,
-            links(foundBooks.size, page.offset, page.count, s"$baseUrl/books/$id/similar")))
-        }
-      }
-    }
-
-  override val searchSuggestions =
-    path("suggestions") {
-      paged(defaultCount = 50) { page =>
-        parameters('q) { query =>
-          val result = model.suggestions(query, page.offset, page.count)
-          onSuccess(result) { foundBooks =>
-            complete(SuggestionsResult("urn:blinkboxbooks:schema:list", foundBooks))
-          }
-        }
-      }
-    }
-
-  val route = handleRejections(invalidParamHandler) {
-    addBBBMediaTypeToResponse {
-      get {
-        pathPrefix("search") {
-          searchForBooks ~ similarBooks ~ searchSuggestions
-        }
-      }
-    }
-  }
 
 }
 
