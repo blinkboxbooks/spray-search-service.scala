@@ -7,8 +7,6 @@ import spray.http.StatusCodes.BadRequest
 import spray.routing.HttpService
 import spray.routing.MalformedQueryParamRejection
 import spray.routing.MissingQueryParamRejection
-import spray.routing.PathMatcher
-import spray.routing.Rejection
 import spray.routing.RejectionHandler
 
 trait BlinkboxHelpers {
@@ -42,7 +40,7 @@ trait BlinkboxHelpers {
 
   def removeCharsetEncoding(entity: HttpEntity) = entity.flatMap(e => HttpEntity(e.contentType.withoutDefinedCharset, e.data))
 
-  val addBBBMediaTypeToResponse = mapHttpResponseEntity(removeCharsetEncoding) &
+  val standardResponseHeaders = mapHttpResponseEntity(removeCharsetEncoding) &
     respondWithMediaType(`application/vnd.blinkboxbooks.data.v1+json`)
 
   /** Custom directive for extracting and validating page parameters (offset and count). */

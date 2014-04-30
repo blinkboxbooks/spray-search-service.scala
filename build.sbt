@@ -13,6 +13,7 @@ resolvers += "spray" at "http://repo.spray.io/"
 libraryDependencies ++= {
   val akkaV = "2.3.0"
   val sprayV = "1.3.1"
+  val json4sV = "3.2.9"
   Seq(
     "io.spray"            %   "spray-can"       % sprayV,
     "io.spray"            %   "spray-routing"   % sprayV,
@@ -22,7 +23,8 @@ libraryDependencies ++= {
     "com.typesafe.akka"   %%  "akka-testkit"    % akkaV   % "test",
     "org.scalatest"       %%  "scalatest"       % "1.9.1" % "test",
     "org.mockito"         %   "mockito-core"    % "1.9.5",
-    "org.json4s"          %%  "json4s-jackson"  % "3.2.7",
+    "org.json4s"          %%  "json4s-native"   % json4sV,
+    "org.json4s"          %%  "json4s-jackson"  % json4sV,
     "junit"               %   "junit"           % "4.11" % "test",
     "com.novocode"        %   "junit-interface" % "0.10" % "test"
   )

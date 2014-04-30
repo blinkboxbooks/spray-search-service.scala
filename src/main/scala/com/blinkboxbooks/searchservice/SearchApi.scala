@@ -1,29 +1,49 @@
 package com.blinkboxbooks.searchservice
 
-import akka.util.Timeout
-import org.json4s.jackson.Serialization
-import org.json4s.NoTypeHints
-import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import spray.http._
-import spray.http.HttpHeaders.RawHeader
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import org.json4s.NoTypeHints
+import org.json4s.jackson.Serialization
+import com.blinkboxbooks.common.spray.BlinkboxHelpers
+import com.wordnik.swagger.annotations._
+import akka.util.Timeout
 import spray.httpx.Json4sJacksonSupport
 import spray.routing.HttpService
 import spray.routing.HttpServiceActor
-import com.blinkboxbooks.common.spray.BlinkboxHelpers
 import spray.routing.Route
 
 /**
  * Abstract defintions of REST API for search service.
  */
-trait SearchRoutes {
+trait SearchRoutes extends HttpService {
+
+  import SearchApi._
 
   def searchForBooks: Route
 
   def similarBooks: Route
 
   def searchSuggestions: Route
+
+}
+
+object SearchApi {
+
+  import com.blinkboxbooks.common.spray.BlinkboxHelpers.PageLink
+
+  // Value classes for responses.
+
+  case class SuggestionsResult(
+    `type`: String,
+    items: List[Entity])
+
+  case class SearchResult(
+    `type`: String,
+    id: String,
+    numberOfResults: Int,
+    books: List[Book],
+    links: Seq[PageLink])
 
 }
 
@@ -41,7 +61,20 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
   implicit val timeout = Timeout(5 seconds)
   implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
 
-  override val searchForBooks =
+  /**
+   * The overall route for the service.
+   */
+  def route = handleRejections(invalidParamHandler) {
+    standardResponseHeaders {
+      get {
+        pathPrefix("search") {
+          searchForBooks ~ similarBooks ~ searchSuggestions
+        }
+      }
+    }
+  }
+
+  override def searchForBooks =
     pathSuffix("books") {
       paged(defaultCount = 50) { page =>
         parameters('q, 'order ?, 'desc.as[Boolean] ? true) { (query, order, desc) =>
@@ -55,7 +88,7 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
       }
     }
 
-  override val similarBooks =
+  override def similarBooks =
     path("books" / Isbn / "similar") { id =>
       paged(defaultCount = 10) { page =>
         val result = model.findSimilar(id, page.offset, page.count)
@@ -67,7 +100,7 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
       }
     }
 
-  override val searchSuggestions =
+  override def searchSuggestions =
     path("suggestions") {
       paged(defaultCount = 50) { page =>
         parameters('q) { query =>
@@ -79,46 +112,5 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
       }
     }
 
-  /**
-   * The overall route for the service.
-   */
-  val route = handleRejections(invalidParamHandler) {
-    addBBBMediaTypeToResponse {
-      get {
-        pathPrefix("search") {
-          searchForBooks ~ similarBooks ~ searchSuggestions
-        }
-      }
-    }
-  }
-
 }
 
-object SearchApi {
-
-  import com.blinkboxbooks.common.spray.BlinkboxHelpers.PageLink
-
-  // Value classes for responses.
-  
-  case class SuggestionsResult(
-    `type`: String,
-    items: List[Entity])
-
-  case class SearchResult(
-    `type`: String,
-    id: String,
-    numberOfResults: Int,
-    books: List[Book],
-    links: Seq[PageLink])
-
-}
-
-/**
- * Actor implementing a search service that delegates requests to a given model.
- */
-class SearchService(override val model: SearchModel, override val baseUrl: String)
-  extends HttpServiceActor with SearchApi {
-
-  def receive = runRoute(route)
-
-}
