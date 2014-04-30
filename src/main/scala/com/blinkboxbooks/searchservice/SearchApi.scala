@@ -18,8 +18,6 @@ import spray.routing.Route
  */
 trait SearchRoutes extends HttpService {
 
-  import SearchApi._
-
   def searchForBooks: Route
 
   def similarBooks: Route
