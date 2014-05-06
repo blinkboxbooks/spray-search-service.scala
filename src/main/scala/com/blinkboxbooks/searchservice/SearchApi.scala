@@ -1,13 +1,12 @@
 package com.blinkboxbooks.searchservice
 
+import akka.util.Timeout
+import com.blinkboxbooks.common.spray.BlinkboxHelpers
+import org.json4s.NoTypeHints
+import org.json4s.jackson.Serialization
 import scala.concurrent.{ Future, ExecutionContext }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import org.json4s.NoTypeHints
-import org.json4s.jackson.Serialization
-import com.blinkboxbooks.common.spray.BlinkboxHelpers
-import com.wordnik.swagger.annotations._
-import akka.util.Timeout
 import spray.httpx.Json4sJacksonSupport
 import spray.routing.HttpService
 import spray.routing.HttpServiceActor

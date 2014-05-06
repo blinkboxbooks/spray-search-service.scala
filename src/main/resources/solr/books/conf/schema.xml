@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Solr schema $Id$ -->
+
+<schema name="books" version="1.1">
+
+<types>
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"  positionIncrementGap="0" />
+	<fieldType name="integer" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0" />
+	<fieldType name="long" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0" />
+    <fieldType name="float" class="solr.SortableFloatField" sortMissingLast="true" omitNorms="true" positionIncrementGap="0" />
+    <fieldType name="date" class="solr.DateField" sortMissingLast="true" omitNorms="true" positionIncrementGap="0" />
+
+	<!-- Basic text field for author names and book title -->
+    <fieldType name="text" class="solr.TextField" positionIncrementGap="100" omitNorms="false">
+		<analyser type="index">
+			<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+			<filter class="solr.TrimFilterFactory" />
+			<filter class="solr.WordDelimiterFilterFactory" stemEnglishPossessive="1" generateWordParts="1" generateNumberParts="0" catenateWords="1" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
+			<filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="25" side="front" />
+			<filter class="solr.LowerCaseFilterFactory"/>
+			<filter class="solr.ASCIIFoldingFilterFactory" />
+		</analyser>
+		<analyzer type="query">
+			<tokenizer class="solr.WhitespaceTokenizerFactory"/>
+			<filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false" />
+			<filter class="solr.WordDelimiterFilterFactory" stemEnglishPossessive="1" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="0" catenateAll="1" splitOnCaseChange="0" />
+			<filter class="solr.LowerCaseFilterFactory" />
+			<filter class="solr.ASCIIFoldingFilterFactory" />
+		</analyzer>
+	</fieldType>
+	
+	<!-- Rich/HTML text for book content (description, keywords) -->
+	<fieldType name="content_text" class="solr.TextField" positionIncrementGap="100" omitNorms="false">
+		<analyzer type="index">
+			<charFilter class="solr.HTMLStripCharFilterFactory" />
+        	<tokenizer class="solr.StandardTokenizerFactory" />
+			<filter class="solr.TrimFilterFactory" />
+			<filter class="solr.WordDelimiterFilterFactory" stemEnglishPossessive="1" generateWordParts="1" generateNumberParts="0" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
+			<filter class="solr.LowerCaseFilterFactory" />
+			<filter class="solr.ASCIIFoldingFilterFactory" />
+		</analyzer>
+		<analyzer type="query">
+        	<tokenizer class="solr.StandardTokenizerFactory" />
+			<filter class="solr.WordDelimiterFilterFactory" stemEnglishPossessive="1" generateWordParts="1" generateNumberParts="0" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
+			<filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+			<filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false" />
+			<filter class="solr.LowerCaseFilterFactory" />
+			<filter class="solr.ASCIIFoldingFilterFactory" />
+		</analyzer>
+	</fieldType>
+
+    <!--Wrap a whole phrase in special characters, for exact matching -->
+    <fieldType name="phrase_lower_exact" class="solr.TextField" positionIncrementGap="100" sortMissingLast="true" omitNorms="true">
+        <analyzer>
+            <tokenizer class="solr.KeywordTokenizerFactory"/>
+            <filter class="solr.ASCIIFoldingFilterFactory" />
+            <filter class="solr.LowerCaseFilterFactory" />
+            <filter class="solr.PatternReplaceFilterFactory" pattern="(\.)" replacement="" replace="all" />
+            <filter class="solr.PatternReplaceFilterFactory" pattern="^(.*)$" replacement="ǣ $1 Ǣ" />
+        </analyzer>
+    </fieldType>
+
+</types>
+ 
+<fields>
+	<!-- Metadata -->
+	<field name="isbn" type="string" indexed="true" stored="true" multiValued="false" required="true" />
+	<field name="title" type="text" indexed="true" stored="true" multiValued="false" required="false" termVectors="true" />
+	<field name="author" type="text" indexed="true" stored="true" multiValued="true" required="false" termVectors="true" />
+	<field name="author_sort" type="text" indexed="true" stored="true" multiValued="false" required="false" />
+	<field name="author_guid" type="string" indexed="true" stored="true" multiValued="true" required="false" termVectors="true" />
+	<field name="keyword" type="string" indexed="true" stored="true" multiValued="true" required="false" termVectors="true" />
+	<field name="description" type="content_text" indexed="true" stored="false" multiValued="false" required="false" termVectors="true" />
+	<field name="price" type="float" indexed="true" stored="true" multiValued="false" required="false" />
+	<field name="publication_date" type="date" indexed="true" stored="true" multiValued="false" required="false" />
+	<field name="bisac_subject" type="string" indexed="true" stored="true" multiValued="true" required ="false" termVectors="true" />
+	<field name="volume" type="integer" indexed="true" stored="true" multiValued="false" required="false" />
+	<field name="timestamp" type="date" indexed="true" stored="true" default="NOW" />
+	<field name="_version_" type="long" indexed="true" stored="true" />
+
+	<!-- Search fields -->
+	<field name="name_field" type="text" indexed="true" stored="false" multiValued="true" />
+	<field name="content_field" type="content_text" indexed="true" stored="false" multiValued="true" />
+	<field name="author_exact_field" type="phrase_lower_exact" indexed="true" stored="false" multiValued="true" omitNorms="false" termVectors="true" />
+	<field name="title_exact_field" type="phrase_lower_exact" indexed="true" stored="false" multiValued="true" omitNorms="false" termVectors="true" />
+</fields>
+
+<!-- Used for main search and auto-completion suggestions -->
+<copyField source="title" dest="name_field" />
+<copyField source="author" dest="name_field" />
+
+<!-- Used for search -->
+<copyField source="keyword" dest="content_field" />
+<copyField source="description" dest="content_field" />
+
+<!-- Used for boosting exact matches -->
+<copyField source="author" dest="author_exact_field" />
+<copyField source="title" dest="title_exact_field" />
+
+<uniqueKey>isbn</uniqueKey>
+
+<defaultSearchField>name_field</defaultSearchField>
+
+<solrQueryParser defaultOperator="OR" />
+
+</schema>

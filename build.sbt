@@ -10,10 +10,13 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 resolvers += "spray" at "http://repo.spray.io/"
 
+resolvers += "Restlet" at "http://maven.restlet.org"
+
 libraryDependencies ++= {
   val akkaV = "2.3.0"
   val sprayV = "1.3.1"
   val json4sV = "3.2.9"
+  val solrV = "4.8.0"
   Seq(
     "io.spray"            %   "spray-can"       % sprayV,
     "io.spray"            %   "spray-routing"   % sprayV,
@@ -26,7 +29,10 @@ libraryDependencies ++= {
     "org.json4s"          %%  "json4s-native"   % json4sV,
     "org.json4s"          %%  "json4s-jackson"  % json4sV,
     "junit"               %   "junit"           % "4.11" % "test",
-    "com.novocode"        %   "junit-interface" % "0.10" % "test"
+    "com.novocode"        %   "junit-interface" % "0.10" % "test",
+    "org.apache.solr"     %   "solr-solrj"      % solrV,
+    "commons-logging"     %   "commons-logging" % "1.1.3",
+    "org.apache.solr"     %   "solr-core"       % solrV % "test"
   )
 }
 
