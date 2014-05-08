@@ -11,11 +11,7 @@ import StandardSolrQueryProvider._
 @RunWith(classOf[JUnitRunner])
 class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
 
-  var provider: StandardSolrQueryProvider = _
-
-  before {
-    provider = new StandardSolrQueryProvider()
-  }
+  val provider: StandardSolrQueryProvider = new StandardSolrQueryProvider()
 
   test("empty query") {
     intercept[Exception] { queryString("") }
@@ -64,15 +60,15 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
     assert(queryString("1234567890123  ") === "isbn:1234567890123")
   }
 
-  test("replace ampersand") {
+  test("clean should replace ampersand") {
     assert(clean("&") === "and")
   }
 
-  test("invalid characters") {
+  test("clean invalid characters") {
     assert(clean("!\"£$%^*()_-+=[{]};:'@#~,<.>/?") === "!-;',.")
   }
 
-  test("international characters should go through unchanged") {
+  test("international characters should go through cleaning unchanged") {
     checkUnchanged("Brönte");
     checkUnchanged("BRÖNTE");
     checkUnchanged("Naïve");
