@@ -50,7 +50,7 @@ trait BlinkboxHelpers {
   /**
    * Generate links for use in paged results.
    */
-  def links(numberOfResults: Int, offset: Int, count: Int, linkBaseUrl: String) = {
+  def links(numberOfResults: Long, offset: Long, count: Long, linkBaseUrl: String) = {
 
     val hasMore = numberOfResults > offset + count
 

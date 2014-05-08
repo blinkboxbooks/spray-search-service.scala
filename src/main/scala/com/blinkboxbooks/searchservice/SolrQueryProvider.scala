@@ -14,7 +14,7 @@ trait SolrQueryProvider {
    * Takes a search string as entered by a user, and returns a valid Solr query,
    * with the appropriate grouping, bracketing, boosts etc.
    */
-  def queryString(searchString: String): Try[String]
+  def queryString(searchString: String): String
 }
 
 /**
@@ -24,18 +24,19 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
 
   import StandardSolrQueryProvider._
 
-  override def queryString(searchString: String): Try[String] = {
+  override def queryString(searchString: String): String = {
 
-    val query: Try[QueryBuilder] = clean(searchString) match {
-      case q if StringUtils.isBlank(q) => Failure(new Exception(s"Invalid or empty search term: $q"))
-      case Isbn(isbn) => Success(QueryBuilder.build("isbn", isbn))
-      case q if q.startsWith("free ") => Success(buildFreeQuery(q.substring(5)))
-      case q if q.endsWith(" free") => Success(buildFreeQuery(q.substring(0, q.length() - 5)))
-      case q => Success(buildQuery(q))
+    val query = clean(searchString) match {
+      case q if StringUtils.isBlank(q) => throw new Exception(s"Invalid or empty search term: $q")
+      case Isbn(isbn) => QueryBuilder.build("isbn", isbn)
+      case q if q.startsWith("free ") => buildFreeQuery(q.substring(5))
+      case q if q.endsWith(" free") => buildFreeQuery(q.substring(0, q.length() - 5))
+      case q => buildQuery(q)
     }
 
-    query.map(_.toString)
+    query.toString
   }
+
 }
 
 object StandardSolrQueryProvider {
@@ -64,8 +65,8 @@ object StandardSolrQueryProvider {
     new QueryBuilder(Operator.OR, true)
       .append(NAME_FIELD, queryString, nameFieldBoost)
       .append(CONTENT_FIELD, queryString, contentFieldBoost)
-      .append(AUTHOR_EXACT, queryString, authorExactBoost)
-      .append(TITLE_EXACT, queryString, titleExactBoost)
+      .append(AUTHOR_EXACT_FIELD, queryString, authorExactBoost)
+      .append(TITLE_EXACT_FIELD, queryString, titleExactBoost)
 
   /** Builds a free books query with a subject extracted from the search term. */
   def buildFreeQuery(subject: String): QueryBuilder =

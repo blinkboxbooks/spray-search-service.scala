@@ -33,13 +33,14 @@ object SearchApi {
 
   case class SuggestionsResult(
     `type`: String,
-    items: List[Entity])
+    items: Seq[Entity])
 
   case class SearchResult(
     `type`: String,
     id: String,
-    numberOfResults: Int,
-    books: List[Book],
+    numberOfResults: Long,
+    suggestions: Seq[String],
+    books: Seq[Book],
     links: Seq[PageLink])
 
 }
@@ -78,7 +79,7 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
           val result = model.search(query, page.offset, page.count, order, desc)
           onSuccess(result) { result =>
             complete(SearchResult("urn:blinkboxbooks:schema:search",
-              query, result.numberOfResults, result.books,
+              query, result.numberOfResults, Seq(), result.books,
               links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books")))
           }
         }
@@ -91,7 +92,7 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
         val result = model.findSimilar(id, page.offset, page.count)
         onSuccess(result) { result =>
           complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
-            id, result.numberOfResults, result.books,
+            id, result.numberOfResults, Seq(), result.books,
             links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books/$id/similar")))
         }
       }

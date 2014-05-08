@@ -17,6 +17,10 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
     provider = new StandardSolrQueryProvider()
   }
 
+  test("empty query") {
+    intercept[Exception] { queryString("") }
+  }
+
   test("simple single term query") {
     // I think it should be possible to simplify these search queries, e.g. by moving the boosts to the 
     // config of the request handlers.
@@ -90,7 +94,7 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
     checkUnchanged("The cees - çćč ÇĆČ");
   }
 
-  private def queryString(searchString: String) = provider.queryString(searchString).get
+  private def queryString(searchString: String) = provider.queryString(searchString)
 
   private def checkUnchanged(query: String) =
     assert(clean(query) === query.toLowerCase(), "Query '" + query

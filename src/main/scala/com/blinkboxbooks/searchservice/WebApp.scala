@@ -7,11 +7,16 @@ import spray.routing._
 import com.blinkboxbooks.common.spray.Core
 import com.blinkboxbooks.common.spray.BootedCore
 import org.apache.solr.client.solrj.impl.HttpSolrServer
+import org.apache.solr.client.solrj.impl.XMLResponseParser
 
 trait WebApi extends RouteConcatenation {
   this: Core =>
 
-  val model = new SolrSearchService(new HttpSolrServer("http://localhost:8983/books")) // TODO: get from config.
+  val solrServer = new HttpSolrServer("http://localhost:8983/solr/books") // TODO: get from config.
+  solrServer.setParser(new XMLResponseParser())
+
+  val model = new SolrSearchService(solrServer)
+
   val baseUrl = "search" // TODO: Get from config.
   val service = system.actorOf(Props(new SearchWebService(model, baseUrl)), "search-service")
 }

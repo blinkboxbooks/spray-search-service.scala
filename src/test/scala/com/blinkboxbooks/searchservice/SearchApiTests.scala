@@ -27,7 +27,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
   val isbn = "1234567890123"
 
-  val searchResults = BookSearchResult(42, List(
+  val searchResults = BookSearchResult(42, Seq("suggestion!"), List(
     Book(None, "9781443414005", "Bleak House", List("Charles Dickens")),
     Book(None, "9780141920061", "Hard Times", List("Charles Dickens"))))
 
@@ -36,7 +36,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     Author(ContributorType, "1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
     Book(BookType, "9780141920061", "Hard Times", List("Charles Dickens")))
 
-  val similar = BookSearchResult(101, List(
+  val similar = BookSearchResult(101, Seq("suggestion!"), List(
     Book(None, "9781443414005", "Block House", List("Charles Smith")),
     Book(None, "9780141920061", "Happy Times", List("Charles Smith"))))
 
@@ -118,7 +118,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   }
 
   test("returns empty list for search query that matches nothing") {
-    doReturn(Future(BookSearchResult(0, List())))
+    doReturn(Future(BookSearchResult(0, Seq(), List())))
       .when(model).search(anyString, anyInt, anyInt, any[Option[String]], anyBoolean)
 
     Get("/search/books?q=unmatched&count=10") ~> route ~> check {
@@ -233,4 +233,5 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   // TODO: Many other tests...
   // Also: create a separate test case for functional tests, using an embedded in-memory instance of Solr.
 
+  // *** Check suggestions ***
 }

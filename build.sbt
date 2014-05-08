@@ -18,6 +18,8 @@ libraryDependencies ++= {
   val json4sV = "3.2.9"
   val solrV = "4.8.0"
   Seq(
+    "org.slf4j"           %   "slf4j-log4j12"   % "1.7.5",
+    "log4j"               %   "log4j"           % "1.2.17",
     "io.spray"            %   "spray-can"       % sprayV,
     "io.spray"            %   "spray-routing"   % sprayV,
     "io.spray"            %%  "spray-json"      % "1.2.6",

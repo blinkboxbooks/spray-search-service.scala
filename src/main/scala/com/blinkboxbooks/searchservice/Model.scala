@@ -24,12 +24,13 @@ case class Book(
   `type`: Option[String],
   id: String,
   title: String,
-  authors: List[String])
+  authors: Seq[String])
   extends Entity(`type`, id, title)
 
 case class BookSearchResult(
-  numberOfResults: Int,
-  books: List[Book])
+  numberOfResults: Long,
+  suggestions: Seq[String],
+  books: Seq[Book])
 
 /**
  * Interface to the business logic of performing searches.
@@ -39,12 +40,12 @@ trait SearchService {
   /**
    * Run search using text query.
    */
-  def suggestions(query: String, offset: Int, count: Int): Future[List[Entity]]
+  def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Entity]]
 
   /**
    * Run search using text query.
    */
-  def search(query: String, offset: Int, count: Int, order: Option[String], desc: Boolean): Future[BookSearchResult]
+  def search(searchString: String, offset: Int, count: Int, order: Option[String], desc: Boolean): Future[BookSearchResult]
 
   /**
    * More Like This: find books similar to a given one.
