@@ -11,7 +11,7 @@ import org.scalatest.{ BeforeAndAfter, FunSuite }
 import org.scalatest.mock.MockitoSugar
 import com.blinkboxbooks.common.spray.BlinkboxHelpers._
 import SearchApi._
-import SearchModel._
+import SearchService._
 import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
 import org.scalatest.junit.JUnitRunner
@@ -20,8 +20,8 @@ import org.scalatest.junit.JUnitRunner
 class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTest with MockitoSugar with SearchApi {
 
   override val baseUrl = "service/search"
-  override def model: SearchModel = mockModel
-  var mockModel: SearchModel = _
+  override def model: SearchService = mockModel
+  var mockModel: SearchService = _
 
   override implicit def actorRefFactory = system
 
@@ -41,7 +41,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     Book(None, "9780141920061", "Happy Times", List("Charles Smith"))))
 
   before {
-    mockModel = mock[SearchModel]
+    mockModel = mock[SearchService]
 
     // Default mocked behaviour: return results for any query.
     doReturn(Future(searchResults)).when(model).search(anyString, anyInt, anyInt, any[Option[String]], anyBoolean)

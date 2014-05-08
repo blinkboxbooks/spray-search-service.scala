@@ -34,6 +34,7 @@ trait BlinkboxHelpers {
   }
 
   /** Matcher for ISBN. */
+  //TODO: Add ^ and $, no?!
   val Isbn = """\d{13}""".r
 
   // Response directives.

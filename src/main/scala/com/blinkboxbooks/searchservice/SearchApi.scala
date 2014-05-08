@@ -53,7 +53,7 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
 
   // Abstract definitions, to be provided by concrete implementations.
   val baseUrl: String
-  def model: SearchModel
+  def model: SearchService
 
   implicit val timeout = Timeout(5 seconds)
   implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal

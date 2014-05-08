@@ -2,10 +2,11 @@ package com.blinkboxbooks.searchservice
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import org.apache.solr.client.solrj.SolrServer
 
-class SolrSearchModel extends SearchModel {
+class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
-  import SearchModel._
+  import SearchService._
 
   // Just some stubbed out data for now.
 

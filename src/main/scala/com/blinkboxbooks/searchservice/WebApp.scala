@@ -6,20 +6,21 @@ import spray.can.Http
 import spray.routing._
 import com.blinkboxbooks.common.spray.Core
 import com.blinkboxbooks.common.spray.BootedCore
+import org.apache.solr.client.solrj.impl.HttpSolrServer
 
 trait WebApi extends RouteConcatenation {
   this: Core =>
 
-  val model = new SolrSearchModel()
+  val model = new SolrSearchService(new HttpSolrServer("http://localhost:8983/books")) // TODO: get from config.
   val baseUrl = "search" // TODO: Get from config.
-  val service = system.actorOf(Props(new SearchService(model, baseUrl)), "search-service")
+  val service = system.actorOf(Props(new SearchWebService(model, baseUrl)), "search-service")
 }
 
 /**
  * Actor implementing a search service that delegates requests to a given model.
  * Includes a Swagger endpoint for the service.
  */
-class SearchService(override val model: SearchModel, override val baseUrl: String)
+class SearchWebService(override val model: SearchService, override val baseUrl: String)
   extends HttpServiceActor with SearchApi {
 
   def receive = runRoute(route)

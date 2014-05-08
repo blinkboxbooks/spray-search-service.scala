@@ -48,9 +48,9 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfter with Bef
     copy("/solr/books/conf/synonyms.txt", new File(booksConfDir, "synonyms.txt"))
 
     // Launch embedded Solr instance.
-    val booksContainer = new CoreContainer(rootDir.getPath)
-    booksContainer.load()
-    solrServer = new EmbeddedSolrServer(booksContainer, "books")
+    val cores = new CoreContainer(rootDir.getPath)
+    cores.load()
+    solrServer = new EmbeddedSolrServer(cores, "books")
   }
 
   override def afterAll() {

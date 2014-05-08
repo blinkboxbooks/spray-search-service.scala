@@ -34,7 +34,7 @@ case class BookSearchResult(
 /**
  * Interface to the business logic of performing searches.
  */
-trait SearchModel {
+trait SearchService {
 
   /**
    * Run search using text query.
@@ -53,7 +53,7 @@ trait SearchModel {
 
 }
 
-object SearchModel {
+object SearchService {
 
   // These ought to move into the Web layer, really.
   val ContributorType = Some("urn:blinkboxbooks:schema:suggestion:contributor")

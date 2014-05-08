@@ -30,6 +30,9 @@ libraryDependencies ++= {
     "org.json4s"          %%  "json4s-jackson"  % json4sV,
     "junit"               %   "junit"           % "4.11" % "test",
     "com.novocode"        %   "junit-interface" % "0.10" % "test",
+    "commons-lang"        %   "commons-lang"    % "2.6",
+    "com.google.guava"    %   "guava"           % "14.0.1",
+    "com.google.code.findbugs" % "jsr305"       % "1.3.9",
     "org.apache.solr"     %   "solr-solrj"      % solrV,
     "commons-logging"     %   "commons-logging" % "1.1.3",
     "org.apache.solr"     %   "solr-core"       % solrV % "test"
