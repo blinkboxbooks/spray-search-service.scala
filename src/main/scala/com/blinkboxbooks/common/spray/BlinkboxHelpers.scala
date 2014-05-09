@@ -26,6 +26,7 @@ trait BlinkboxHelpers {
     binary = true, // binary as the encoding is defined as utf-8 by the json spec
     compressible = true))
 
+  // TODO: I don't think these are actually needed?
   val invalidParamHandler = RejectionHandler {
     case MalformedQueryParamRejection(paramName, _, _) :: _ =>
       complete(BadRequest, s"Invalid value for $paramName parameter")
@@ -35,6 +36,8 @@ trait BlinkboxHelpers {
 
   /** Matcher for ISBN. */
   //TODO: Add ^ and $, no?!
+  //TODO: Might as well reuse the common definition that's used elsewhere! Just add a capture group around it too;
+  // presumably this wouldn't cause a problem when used in a route?
   val Isbn = """\d{13}""".r
 
   // Response directives.

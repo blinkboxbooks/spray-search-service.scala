@@ -25,26 +25,6 @@ trait SearchRoutes extends HttpService {
 
 }
 
-object SearchApi {
-
-  import com.blinkboxbooks.common.spray.BlinkboxHelpers.PageLink
-
-  // Value classes for responses.
-
-  case class SuggestionsResult(
-    `type`: String,
-    items: Seq[Entity])
-
-  case class SearchResult(
-    `type`: String,
-    id: String,
-    numberOfResults: Long,
-    suggestions: Seq[String],
-    books: Seq[Book],
-    links: Seq[PageLink])
-
-}
-
 /**
  * API for search service, expressed as Spray routes.
  */
@@ -109,6 +89,26 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
         }
       }
     }
+
+}
+
+object SearchApi {
+
+  import com.blinkboxbooks.common.spray.BlinkboxHelpers.PageLink
+
+  // Value classes for responses.
+
+  case class SuggestionsResult(
+    `type`: String,
+    items: Seq[Entity])
+
+  case class SearchResult(
+    `type`: String,
+    id: String,
+    numberOfResults: Long,
+    suggestions: Seq[String],
+    books: Seq[Book],
+    links: Seq[PageLink])
 
 }
 
