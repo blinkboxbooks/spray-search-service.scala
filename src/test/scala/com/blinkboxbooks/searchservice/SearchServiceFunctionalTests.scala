@@ -121,6 +121,10 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfter with Bef
   test("search for specific free books") {
     fail("TODO")
   }
+  
+  test("suggestions when some books are missing fields") {
+    fail("TODO")
+  }
 
   private def copy(input: String, output: File) = {
     val inputStream = getClass.getResourceAsStream(input)

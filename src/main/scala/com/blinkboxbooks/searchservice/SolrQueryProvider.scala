@@ -15,6 +15,13 @@ trait SolrQueryProvider {
    * with the appropriate grouping, bracketing, boosts etc.
    */
   def queryString(searchString: String): String
+
+  /**
+   * Takes a search string as typed by a user, and returns a valid Solr query
+   * that will return auto-complete suggestions for the characters the user has typed so far.
+   */
+  def suggestionsQueryString(searchString: String): String
+
 }
 
 /**
@@ -37,6 +44,13 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
     query.toString
   }
 
+  override def suggestionsQueryString(searchString: String): String = {
+    val cleaned = clean(searchString)
+    if (StringUtils.isBlank(cleaned)) throw new Exception(s"Invalid or empty search term: $cleaned")
+    new QueryBuilder(Operator.OR, true)
+      .append(NAME_FIELD, cleaned, true)
+      .toString
+  }
 }
 
 object StandardSolrQueryProvider {

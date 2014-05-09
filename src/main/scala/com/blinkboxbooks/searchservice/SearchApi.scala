@@ -34,7 +34,7 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
 
   // Abstract definitions, to be provided by concrete implementations.
   val baseUrl: String
-  def model: SearchService
+  def service: SearchService
 
   implicit val timeout = Timeout(5 seconds)
   implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
@@ -56,10 +56,10 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
     pathSuffix("books") {
       paged(defaultCount = 50) { page =>
         parameters('q, 'order ?, 'desc.as[Boolean] ? true) { (query, order, desc) =>
-          val result = model.search(query, page.offset, page.count, order, desc)
+          val result = service.search(query, page.offset, page.count, order, desc)
           onSuccess(result) { result =>
             complete(SearchResult("urn:blinkboxbooks:schema:search",
-              query, result.numberOfResults, Seq(), result.books,
+              query, result.numberOfResults, result.suggestions, result.books,
               links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books")))
           }
         }
@@ -69,7 +69,7 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
   override def similarBooks =
     path("books" / Isbn / "similar") { id =>
       paged(defaultCount = 10) { page =>
-        val result = model.findSimilar(id, page.offset, page.count)
+        val result = service.findSimilar(id, page.offset, page.count)
         onSuccess(result) { result =>
           complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
             id, result.numberOfResults, Seq(), result.books,
@@ -80,9 +80,9 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
 
   override def searchSuggestions =
     path("suggestions") {
-      paged(defaultCount = 50) { page =>
+      paged(defaultCount = 10) { page =>
         parameters('q) { query =>
-          val result = model.suggestions(query, page.offset, page.count)
+          val result = service.suggestions(query, page.offset, page.count)
           onSuccess(result) { suggestions =>
             complete(SuggestionsResult("urn:blinkboxbooks:schema:list", suggestions))
           }

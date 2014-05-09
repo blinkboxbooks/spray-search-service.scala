@@ -21,24 +21,28 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   val queryProvider = new StandardSolrQueryProvider()
 
   override def search(searchString: String, offset: Int, count: Int, order: Option[String], desc: Boolean) = Future {
-    val query = solrQuery(queryProvider.queryString(searchString), offset, count)
+    val queryStr = queryProvider.queryString(searchString)
+    val query = solrQuery(queryStr, offset, count)
     val response = solrServer.query(query)
     toBookSearchResult(response)
-  }
-
-  override def suggestions(query: String, offset: Int, count: Int): Future[List[Entity]] = Future {
-    List(
-      Book(BookType, "9781443414005", "Bleak House", List("Charles Dickens")),
-      Author(ContributorType, "1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
-      Book(BookType, "9780141920061", "Hard Times", List("Charles Dickens"))).drop(offset).take(count)
   }
 
   override def findSimilar(id: String, offset: Int, count: Int): Future[BookSearchResult] = Future {
-    val query = solrQuery(ISBN_FIELD + ":" + id, offset, count).setRequestHandler("/mlt")
+    val queryStr = ISBN_FIELD + ":" + id
+    val query = solrQuery(queryStr, offset, count).setRequestHandler("/mlt") // TODO: Make req handler configurable
     val response = solrServer.query(query)
     toBookSearchResult(response)
   }
-  
+
+  override def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Entity]] = Future {
+    val queryStr = queryProvider.suggestionsQueryString(searchString)
+    // TODO: Do the sort order that's specifically needed for suggestions (not a parameter).
+    //        addSortOrder( "score desc, volume desc", params );
+    val query = solrQuery(queryStr, offset, count)
+    val response = solrServer.query(query)
+    toSuggestions(response)
+  }
+
   private def solrQuery(queryStr: String, offset: Int, count: Int): SolrQuery = {
     val query = new SolrQuery()
       .setFields(Fields: _*)
@@ -59,7 +63,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   }
 
   private def toBookSearchResult(response: QueryResponse): BookSearchResult = {
-    val books = response.getResults.asScala.map(docToBook)
+    val books = response.getResults.asScala.map(docToBook(includeType = false))
 
     // TODO: Construct the proper query with suggested spellings.
     val suggestions = Option(response.getSpellCheckResponse) match {
@@ -70,11 +74,34 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     BookSearchResult(response.getResults.getNumFound(), suggestions, books.toList)
   }
 
-  private def docToBook(doc: SolrDocument): Book =
-    new Book(None,
+  private def docToBook(includeType: Boolean)(doc: SolrDocument): Book =
+    new Book(if (includeType) BookType else None,
       doc.getFieldValue(ISBN_FIELD).toString,
       doc.getFieldValue(TITLE_FIELD).toString,
       getFields(doc, AUTHOR_FIELD).map(_.toString))
+
+  /** Return entities for the matched book, as well as the authors of the book. */
+  private def docToEntities(doc: SolrDocument): Seq[Entity] = {
+    val book = docToBook(includeType = true)(doc)
+    val authorNames = getFields(doc, AUTHOR_FIELD).map(_.toString)
+    val authorGuids = getFields(doc, AUTHOR_GUID_FIELD).map(_.toString)
+
+    val authors = (authorNames zip authorGuids).map {
+      case (authorName, authorGuid) => new Author(ContributorType, authorName, authorGuid)
+    }
+
+    Seq(book) ++ authors
+  }
+
+  private def toSuggestions(response: QueryResponse): Seq[Entity] =
+    response.getResults.asScala
+      .filter(doc => !hasMissingBookFields(doc))
+      .flatMap(docToEntities)
+      .toList
+
+  private def hasMissingBookFields(doc: SolrDocument) =
+    !Option(doc.getFieldValues(AUTHOR_FIELD)).isDefined ||
+      !Option(doc.getFieldValue(TITLE_FIELD)).isDefined
 
   /** Helper to make SolrJ Java API a bit more helpful, to stop it from returning nulls. */
   // TODO: Make implicit method on SolrDocument!

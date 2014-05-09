@@ -13,23 +13,23 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
 
   val provider: StandardSolrQueryProvider = new StandardSolrQueryProvider()
 
-  test("empty query") {
+  test("search with empty query") {
     intercept[Exception] { queryString("") }
   }
 
-  test("simple single term query") {
+  test("search with simple single term query") {
     // I think it should be possible to simplify these search queries, e.g. by moving the boosts to the 
     // config of the request handlers.
     assert(queryString("dickens") ===
       """( name_field:(dicken's) OR name_field:(dickens) )^10 OR ( content_field:(dicken's) OR content_field:(dickens) ) OR author_exact_field:("dickens")^25 OR title_exact_field:("dickens")^25""")
   }
 
-  test("simple multi-term query") {
+  test("search with simple multi-term query") {
     assert(queryString("charles dickens") ===
       """( name_field:(charle's dicken's) OR name_field:(charles dickens) )^10 OR ( content_field:(charle's dicken's) OR content_field:(charles dickens) ) OR ( author_exact_field:("charle's dickens") OR author_exact_field:("charles dickens") )^25 OR ( title_exact_field:("charle's dickens") OR title_exact_field:("charles dickens") )^25""")
   }
 
-  test("lower case and trim queries") {
+  test("search with lower case and trim queries") {
     assert(queryString(" with white space  ") === queryString("with white space"))
     assert(queryString("With MIXED Case") === queryString("with mixed case"))
     assert(queryString("With a mixture Of things ") === queryString("with a mixture of things"))
@@ -58,6 +58,23 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
     assert(queryString("1234567890123") === "isbn:1234567890123")
     assert(queryString(" 1234567890123") === "isbn:1234567890123")
     assert(queryString("1234567890123  ") === "isbn:1234567890123")
+  }
+
+  test("suggestions for single term") {
+    assert(provider.suggestionsQueryString("foo") === "name_field:(foo*)")
+  }
+
+  test("suggestions for multiple terms") {
+    assert(provider.suggestionsQueryString("foo bar baz") === "name_field:(foo bar baz*)")
+  }
+
+  test("suggestions for empty string") {
+    intercept[Exception] { provider.suggestionsQueryString("") }
+  }
+
+  test("suggestions for search term where apostrophe should be inserted") {
+    assert(provider.suggestionsQueryString("enders") === "( name_field:(ender's*) OR name_field:(enders*) )")
+    assert(provider.suggestionsQueryString("enders game") === "( name_field:(ender's game*) OR name_field:(enders game*) )")
   }
 
   test("clean should replace ampersand") {
