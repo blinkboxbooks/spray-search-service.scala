@@ -50,6 +50,10 @@ trait BlinkboxHelpers {
   /** Custom directive for extracting and validating page parameters (offset and count). */
   def paged(defaultCount: Int) = parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount).as(Page)
 
+  /** Custom directive for specifying sort order. */
+  def ordered(defaultOrder: SortOrder = SortOrder("RELEVANCE", desc = true)) = 
+    parameters('order ? defaultOrder.order, 'desc.as[Boolean] ? defaultOrder.desc).as(SortOrder)
+
   /**
    * Generate links for use in paged results.
    */
@@ -83,4 +87,5 @@ object BlinkboxHelpers {
   }
   case class PageLink(rel: String, href: String)
 
+  case class SortOrder(order: String, desc: Boolean)
 }

@@ -44,7 +44,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     mockService = mock[SearchService]
 
     // Default mocked behaviour: return results for any query.
-    doReturn(Future(searchResults)).when(service).search(anyString, anyInt, anyInt, any[Option[String]], anyBoolean)
+    doReturn(Future(searchResults)).when(service).search(anyString, anyInt, anyInt, any[SortOrder])
     doReturn(Future(suggestions)).when(service).suggestions(anyString, anyInt, anyInt)
     doReturn(Future(similar)).when(service).findSimilar(anyString, anyInt, anyInt)
   }
@@ -55,7 +55,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       assert(status === OK)
 
       // Check performed query, including default parameters.
-      verify(service).search("some words", 0, 50, None, true)
+      verify(service).search("some words", 0, 50, SortOrder("RELEVANCE", true))
 
       // Just this once, check the response against the full text of the expected JSON.
       val expectedJson =
@@ -97,14 +97,14 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
     // Set up mock to return search results for expected offset and count only.
     doReturn(Future(searchResults)).when(service)
-      .search(anyString, Matchers.eq(offset), Matchers.eq(count), any[Option[String]], anyBoolean)
+      .search(anyString, Matchers.eq(offset), Matchers.eq(count), any[SortOrder])
 
     Get(s"/search/books?q=some+words&count=$count&order=POPULARITY&desc=false&offset=$offset") ~> route ~> check {
       assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json")
       assert(status === OK)
 
       // Check request parameters were picked up correctly.
-      verify(service).search("some words", offset, count, Some("POPULARITY"), false)
+      verify(service).search("some words", offset, count, SortOrder("POPULARITY", false))
 
       // Check that the JSON response is correct
       val result = parse(body.data.asString).extract[SearchResult]
@@ -121,7 +121,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
   test("returns empty list for search query that matches nothing") {
     doReturn(Future(BookSearchResult(0, Seq(), List())))
-      .when(service).search(anyString, anyInt, anyInt, any[Option[String]], anyBoolean)
+      .when(service).search(anyString, anyInt, anyInt, any[SortOrder])
 
     Get("/search/books?q=unmatched&count=10") ~> route ~> check {
       assert(status === OK)
@@ -145,10 +145,19 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     }
   }
 
+  test("search with invalid sort order") {
+    Get("/search/books?q=some+query&order=UNKNOWN") ~> route ~> check {
+      assert(status === BadRequest)
+    }
+    Get("/search/books?q=some+query&desc=INVALID") ~> route ~> check {
+      assert(status === BadRequest)
+    }
+  }
+
   test("returns 500 when we fail to perform search on back-end") {
     // Return failure from mock service.
     val ex = new IOException("Test exception")
-    doReturn(Future(throw ex)).when(service).search(anyString, anyInt, anyInt, any[Option[String]], anyBoolean)
+    doReturn(Future(throw ex)).when(service).search(anyString, anyInt, anyInt, any[SortOrder])
 
     Get("/search/books?q=some+query") ~> route ~> check {
       assert(status === InternalServerError)

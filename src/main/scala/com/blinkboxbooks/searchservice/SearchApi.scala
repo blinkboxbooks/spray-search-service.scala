@@ -2,6 +2,7 @@ package com.blinkboxbooks.searchservice
 
 import akka.util.Timeout
 import com.blinkboxbooks.common.spray.BlinkboxHelpers
+import com.blinkboxbooks.common.spray.BlinkboxHelpers._
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 import scala.concurrent.{ Future, ExecutionContext }
@@ -55,12 +56,14 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
   override def searchForBooks =
     pathSuffix("books") {
       paged(defaultCount = 50) { page =>
-        parameters('q, 'order ?, 'desc.as[Boolean] ? true) { (query, order, desc) =>
-          val result = service.search(query, page.offset, page.count, order, desc)
-          onSuccess(result) { result =>
-            complete(SearchResult("urn:blinkboxbooks:schema:search",
-              query, result.numberOfResults, result.suggestions, result.books,
-              links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books")))
+        ordered() { sortOrder =>
+          parameters('q) { query =>
+            val result = service.search(query, page.offset, page.count, sortOrder)
+            onSuccess(result) { result =>
+              complete(SearchResult("urn:blinkboxbooks:schema:search",
+                query, result.numberOfResults, result.suggestions, result.books,
+                links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books")))
+            }
           }
         }
       }
@@ -93,8 +96,6 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
 }
 
 object SearchApi {
-
-  import com.blinkboxbooks.common.spray.BlinkboxHelpers.PageLink
 
   // Value classes for responses.
 

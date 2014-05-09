@@ -1,6 +1,7 @@
 package com.blinkboxbooks.searchservice
 
 import scala.concurrent.Future
+import com.blinkboxbooks.common.spray.BlinkboxHelpers._
 
 /**
  * Domain classes for search results.
@@ -45,7 +46,7 @@ trait SearchService {
   /**
    * Run search using text query.
    */
-  def search(searchString: String, offset: Int, count: Int, order: Option[String], desc: Boolean): Future[BookSearchResult]
+  def search(searchString: String, offset: Int, count: Int, order: SortOrder): Future[BookSearchResult]
 
   /**
    * More Like This: find books similar to a given one.

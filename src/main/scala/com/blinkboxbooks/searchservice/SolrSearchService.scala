@@ -1,5 +1,6 @@
 package com.blinkboxbooks.searchservice
 
+import com.blinkboxbooks.common.spray.BlinkboxHelpers.SortOrder
 import org.apache.solr.client.solrj.SolrServer
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.SolrQuery.ORDER
@@ -10,6 +11,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import Definitions._
 import java.util.Collections
+import org.apache.solr.client.solrj.SolrQuery.SortClause
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
@@ -17,49 +19,56 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
   val Fields = Array("isbn", "title", "author")
   val SortOrders = Seq(("score", ORDER.desc), ("price", ORDER.asc), ("title", ORDER.asc))
+  val RelevanceOrder = SortOrder("RELEVANCE", true)
 
   val queryProvider = new StandardSolrQueryProvider()
 
-  override def search(searchString: String, offset: Int, count: Int, order: Option[String], desc: Boolean) = Future {
+  override def search(searchString: String, offset: Int, count: Int, order: SortOrder) = Future {
     val queryStr = queryProvider.queryString(searchString)
-    val query = solrQuery(queryStr, offset, count)
+    val query = solrQuery(queryStr, offset, count, order)
     val response = solrServer.query(query)
     toBookSearchResult(response)
   }
 
   override def findSimilar(id: String, offset: Int, count: Int): Future[BookSearchResult] = Future {
     val queryStr = ISBN_FIELD + ":" + id
-    val query = solrQuery(queryStr, offset, count).setRequestHandler("/mlt") // TODO: Make req handler configurable
+    val query = solrQuery(queryStr, offset, count, RelevanceOrder).setRequestHandler("/mlt") // TODO: Make req handler configurable
     val response = solrServer.query(query)
     toBookSearchResult(response)
   }
 
   override def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Entity]] = Future {
     val queryStr = queryProvider.suggestionsQueryString(searchString)
-    // TODO: Do the sort order that's specifically needed for suggestions (not a parameter).
-    //        addSortOrder( "score desc, volume desc", params );
-    val query = solrQuery(queryStr, offset, count)
+    val query = solrQuery(queryStr, offset, count, RelevanceOrder)
     val response = solrServer.query(query)
     toSuggestions(response)
   }
 
-  private def solrQuery(queryStr: String, offset: Int, count: Int): SolrQuery = {
+  // TODO: Should this be a list of orders??
+  private def solrQuery(queryStr: String, offset: Int, count: Int, order: SortOrder): SolrQuery = {
     val query = new SolrQuery()
       .setFields(Fields: _*)
       .setQuery(queryStr)
       .setStart(offset)
       .setRows(count)
+      .addSort(toSolrSort(order))
 
-    // Enable highlighting in results, so we know which terms matched.
-    query.setHighlight(true)
+    // Enable highlighting of results, so we know which terms matched.
     Fields.foreach(f => query.addHighlightField(f))
 
-    // TODO: Set the *right* sort order, and stop using the deprecated methods for this.
-    for ((sortField, order) <- SortOrders) {
-      query.addSortField(sortField, order)
-    }
-
     query
+  }
+
+  private def toSolrSort(order: SortOrder) =
+    SortClause.create(orderToField(order.order), if (order.desc) SolrQuery.ORDER.desc else SolrQuery.ORDER.asc)
+
+  private def orderToField(order: String): String = order match {
+    case "RELEVANCE" => SCORE_FIELD
+    case "POPULARITY" => VOLUME_FIELD
+    case "AUTHOR" => AUTHOR_FIELD
+    case "PRICE" => PRICE_FIELD
+    case "PUBLICATION_DATE" => PUBLICATION_DATE_FIELD
+    case _ => throw new IllegalArgumentException(s"Unsupported sort order: $order")
   }
 
   private def toBookSearchResult(response: QueryResponse): BookSearchResult = {

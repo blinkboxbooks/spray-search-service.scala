@@ -12,8 +12,8 @@ import org.apache.solr.client.solrj.impl.XMLResponseParser
 trait WebApi extends RouteConcatenation {
   this: Core =>
 
-  //val solrServer = new HttpSolrServer("http://localhost:8983/solr/books") // TODO: get from config.
-  val solrServer = new HttpSolrServer("http://solr.mobcastdev.com/solr/books") // TODO: get from config.
+  val solrServer = new HttpSolrServer("http://localhost:8983/solr/books") // TODO: get from config.
+  //  val solrServer = new HttpSolrServer("http://solr.mobcastdev.com/solr/books") // TODO: get from config.
   solrServer.setParser(new XMLResponseParser())
 
   val model = new SolrSearchService(solrServer)
