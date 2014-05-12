@@ -65,7 +65,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   private def orderToField(order: String): String = order match {
     case "RELEVANCE" => SCORE_FIELD
     case "POPULARITY" => VOLUME_FIELD
-    case "AUTHOR" => AUTHOR_FIELD
+    case "AUTHOR" => AUTHOR_SORT_FIELD
     case "PRICE" => PRICE_FIELD
     case "PUBLICATION_DATE" => PUBLICATION_DATE_FIELD
     case _ => throw new IllegalArgumentException(s"Unsupported sort order: $order")

@@ -1,4 +1,5 @@
 package com.blinkboxbooks.searchservice
+
 import java.io.IOException
 import scala.concurrent.Future
 import org.json4s._
@@ -9,12 +10,13 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.{ BeforeAndAfter, FunSuite }
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.junit.JUnitRunner
+import spray.http.StatusCodes._
+import spray.testkit.ScalatestRouteTest
+
 import com.blinkboxbooks.common.spray.BlinkboxHelpers._
 import SearchApi._
 import SearchService._
-import spray.http.StatusCodes._
-import spray.testkit.ScalatestRouteTest
-import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTest with MockitoSugar with SearchApi {

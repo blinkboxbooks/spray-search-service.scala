@@ -1,21 +1,30 @@
 package com.blinkboxbooks.searchservice
 
-import org.apache.solr.client.solrj.SolrServer
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import org.apache.solr.client.solrj.SolrRequest
+import org.apache.solr.client.solrj.SolrServer
 import org.apache.solr.common.util.NamedList
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.mockito.Matchers._
+import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSuite
-import org.mockito.Mockito._
-import org.mockito.Matchers._
+import com.blinkboxbooks.common.spray.BlinkboxHelpers._
+import org.apache.solr.common.params.SolrParams
+import org.scalatest.junit.JUnitRunner
+import org.apache.solr.client.solrj.response.QueryResponse
 
 @RunWith(classOf[JUnitRunner])
 class SolrSearchServiceTests extends FunSuite with BeforeAndAfter {
 
+  var solrServer: SolrServer = _
+  var searchService: SolrSearchService = _
+
   before {
-    var solrServer = spy(new StubbedSolrServer())
-    var searchService = new SolrSearchService(solrServer)
+    val response = new QueryResponse()
+    //    solrServer = new StubbedSolrServer(response)
+    searchService = new SolrSearchService(solrServer)
   }
 
   test("Successful search") {
@@ -26,10 +35,16 @@ class SolrSearchServiceTests extends FunSuite with BeforeAndAfter {
     fail("TODO")
   }
 
-  private class StubbedSolrServer extends SolrServer {
-    override def request(request: SolrRequest): NamedList[Object] = new NamedList()
-    override def shutdown() {}
-  }
+  //  private class StubbedSolrServer(response: QueryResponse) extends SolrServer {
+  //    var queried: SolrParams = _
+  //
+  //    override def request(query: SolrParams): QueryResponse = {
+  //      queried = query
+  //      response
+  //    }
+  //
+  //    override def shutdown() {}
+  //  }
 
 }
 

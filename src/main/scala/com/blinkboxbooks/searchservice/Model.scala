@@ -10,23 +10,24 @@ import com.blinkboxbooks.common.spray.BlinkboxHelpers._
  * from these classes and added in the web layer at some point.
  */
 
-abstract class Entity(
-  `type`: Option[String],
-  id: String,
-  title: String)
+sealed trait Entity {
+  val `type`: Option[String]
+  val id: String
+  val title: String
+}
 
 case class Author(
   `type`: Option[String],
   id: String,
   title: String)
-  extends Entity(`type`, id, title)
+  extends Entity
 
 case class Book(
   `type`: Option[String],
   id: String,
   title: String,
   authors: Seq[String])
-  extends Entity(`type`, id, title)
+  extends Entity
 
 case class BookSearchResult(
   numberOfResults: Long,
