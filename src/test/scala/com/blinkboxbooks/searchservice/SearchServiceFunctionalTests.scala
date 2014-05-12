@@ -126,7 +126,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfter with Bef
     fail("TODO")
   }
 
-  private def copy(input: String, output: File) = {
+  private def copy(input: String, output: File) {
     val inputStream = getClass.getResourceAsStream(input)
     try {
       assert(input != null, s"Couldn't find input file '$input'")

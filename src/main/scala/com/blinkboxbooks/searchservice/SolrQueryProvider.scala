@@ -44,13 +44,13 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
     query.toString
   }
 
-  override def suggestionsQueryString(searchString: String): String = {
-    val cleaned = clean(searchString)
-    if (StringUtils.isBlank(cleaned)) throw new Exception(s"Invalid or empty search term: $cleaned")
-    new QueryBuilder(Operator.OR, true)
+  override def suggestionsQueryString(searchString: String): String = clean(searchString) match {
+    case cleaned if StringUtils.isBlank(cleaned) => throw new Exception(s"Invalid or empty search string: $searchString")
+    case cleaned => new QueryBuilder(Operator.OR, true)
       .append(NAME_FIELD, cleaned, true)
       .toString
   }
+
 }
 
 object StandardSolrQueryProvider {

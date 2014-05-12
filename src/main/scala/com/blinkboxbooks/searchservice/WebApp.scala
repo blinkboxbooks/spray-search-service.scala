@@ -24,7 +24,6 @@ trait WebApi extends RouteConcatenation {
 
 /**
  * Actor implementing a search service that delegates requests to a given model.
- * Includes a Swagger endpoint for the service.
  */
 class SearchWebService(override val service: SearchService, override val baseUrl: String)
   extends HttpServiceActor with SearchApi {
