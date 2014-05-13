@@ -86,7 +86,7 @@ object StandardSolrQueryProvider {
   /** Builds a free books query with a subject extracted from the search term. */
   def buildFreeQuery(subject: String): QueryBuilder =
     new QueryBuilder(Operator.AND, false)
-      .append(QUERY_PRICE, "0")
+      .append(PRICE_FIELD, "0")
       .append(NAME_FIELD, subject)
 
 }

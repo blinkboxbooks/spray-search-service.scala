@@ -7,10 +7,12 @@ import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.SolrQuery.ORDER
 import org.apache.solr.client.solrj.SolrQuery.SortClause
 import org.apache.solr.client.solrj.response.QueryResponse
+import org.apache.solr.client.solrj.response.SpellCheckResponse
 import org.apache.solr.common.SolrDocument
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import org.apache.solr.common.params.SpellingParams
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
@@ -23,27 +25,28 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
   override def search(searchString: String, offset: Int, count: Int, order: SortOrder) = Future {
     val queryStr = queryProvider.queryString(searchString)
-    val query = solrQuery(queryStr, offset, count, order)
+    val query = solrQuery(queryStr, offset, count, order, spellCheck = true)
     val response = solrServer.query(query)
-    toBookSearchResult(response)
+    toBookSearchResult(response, Some(searchString))
   }
 
   override def findSimilar(id: String, offset: Int, count: Int): Future[BookSearchResult] = Future {
     val queryStr = ISBN_FIELD + ":" + id
-    val query = solrQuery(queryStr, offset, count, RelevanceOrder).setRequestHandler("/mlt") // TODO: Make req handler configurable
+    val query = solrQuery(queryStr, offset, count, RelevanceOrder, spellCheck = false)
+      .setRequestHandler("/mlt") // TODO: Make req handler configurable
     val response = solrServer.query(query)
     toBookSearchResult(response)
   }
 
   override def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Suggestion]] = Future {
     val queryStr = queryProvider.suggestionsQueryString(searchString)
-    val query = solrQuery(queryStr, offset, count, RelevanceOrder)
+    val query = solrQuery(queryStr, offset, count, RelevanceOrder, spellCheck = false)
     val response = solrServer.query(query)
     toSuggestions(response)
   }
 
   // TODO: Should this be a list of orders?
-  private def solrQuery(queryStr: String, offset: Int, count: Int, order: SortOrder): SolrQuery = {
+  private def solrQuery(queryStr: String, offset: Int, count: Int, order: SortOrder, spellCheck: Boolean): SolrQuery = {
     val query = new SolrQuery()
       .setFields(Fields: _*)
       .setQuery(queryStr)
@@ -53,6 +56,11 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
     // Enable highlighting of results, so we know which terms matched.
     Fields.foreach(f => query.addHighlightField(f))
+
+    if (spellCheck) {
+      query.setParam(SpellingParams.SPELLCHECK_COLLATE, true)
+      query.setParam(SpellingParams.SPELLCHECK_EXTENDED_RESULTS, true)
+    }
 
     query
   }
@@ -69,17 +77,20 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     case _ => throw new IllegalArgumentException(s"Unsupported sort order: $order")
   }
 
-  private def toBookSearchResult(response: QueryResponse): BookSearchResult = {
+  private def toBookSearchResult(response: QueryResponse, searchString: Option[String] = None) = {
     val books = response.getResults.asScala.map(docToBook(includeType = false))
 
-    // TODO: Construct the proper query with suggested spellings.
-    val suggestions = Option(response.getSpellCheckResponse) match {
-      case None => Seq()
-      case Some(spellCheckResponse) => spellCheckResponse.getSuggestions.asScala.map(_.getToken)
-    }
+            // TODO! Ensure embedded Solr is using index as dictionary.
+//    val suggestedQueries = response.getSpellCheckResponse.getCollatedResults().asScala
+//      .sortBy(_.getNumberOfHits * -1)
+//      .map(_.getCollationQueryString)
+//
+    val suggestedQueries = Seq()
 
-    BookSearchResult(response.getResults.getNumFound(), suggestions, books.toList)
+    BookSearchResult(response.getResults.getNumFound(), suggestedQueries, books.toList)
   }
+
+  private def replaceTerms(originalQuery: String, replacements: Map[String, String]): String = ???
 
   private def docToBook(includeType: Boolean)(doc: SolrDocument): Book =
     Book(doc.getFieldValue(ISBN_FIELD).toString,
@@ -124,19 +135,18 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 object SolrConstants {
 
   // Field names.
+  private[searchservice] val ISBN_FIELD = "isbn"
+  private[searchservice] val TITLE_FIELD = "title"
   private[searchservice] val SCORE_FIELD = "score"
-  private[searchservice] val VOLUME_FIELD = "volume"
-  private[searchservice] val PRICE_FIELD = "price"
-  private[searchservice] val PUBLICATION_DATE_FIELD = "publication_date"
   private[searchservice] val NAME_FIELD = "name_field"
   private[searchservice] val CONTENT_FIELD = "content_field"
+  private[searchservice] val PUBLICATION_DATE_FIELD = "publication_date"
+  private[searchservice] val VOLUME_FIELD = "volume"
+  private[searchservice] val PRICE_FIELD = "price"
   private[searchservice] val AUTHOR_FIELD = "author"
   private[searchservice] val AUTHOR_EXACT_FIELD = "author_exact_field"
   private[searchservice] val AUTHOR_GUID_FIELD = "author_guid"
   private[searchservice] val AUTHOR_SORT_FIELD = "author_sort"
   private[searchservice] val TITLE_EXACT_FIELD = "title_exact_field"
-  private[searchservice] val QUERY_PRICE = "price"
-  private[searchservice] val ISBN_FIELD = "isbn"
-  private[searchservice] val TITLE_FIELD = "title"
 
 }
