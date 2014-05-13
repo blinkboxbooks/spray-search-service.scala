@@ -16,7 +16,6 @@ import spray.testkit.ScalatestRouteTest
 
 import com.blinkboxbooks.common.spray.BlinkboxHelpers._
 import SearchApi._
-import SearchService._
 
 @RunWith(classOf[JUnitRunner])
 class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTest with MockitoSugar with SearchApi {
@@ -30,17 +29,17 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   val isbn = "1234567890123"
 
   val searchResults = BookSearchResult(42, Seq("suggested search"), List(
-    Book(None, "9781443414005", "Bleak House", List("Charles Dickens")),
-    Book(None, "9780141920061", "Hard Times", List("Charles Dickens"))))
+    Book("9781443414005", "Bleak House", List("Charles Dickens")),
+    Book("9780141920061", "Hard Times", List("Charles Dickens"))))
 
   val suggestions = List(
-    Book(BookType, "9781443414005", "Bleak House", List("Charles Dickens")),
-    Author(ContributorType, "1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
-    Book(BookType, "9780141920061", "Hard Times", List("Charles Dickens")))
+    Book("9781443414005", "Bleak House", List("Charles Dickens")),
+    Author("1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
+    Book("9780141920061", "Hard Times", List("Charles Dickens")))
 
   val similar = BookSearchResult(101, Seq(), List(
-    Book(None, "9781443414005", "Block House", List("Charles Smith")),
-    Book(None, "9780141920061", "Happy Times", List("Charles Smith"))))
+    Book("9781443414005", "Block House", List("Charles Smith")),
+    Book("9780141920061", "Happy Times", List("Charles Smith"))))
 
   before {
     mockService = mock[SearchService]

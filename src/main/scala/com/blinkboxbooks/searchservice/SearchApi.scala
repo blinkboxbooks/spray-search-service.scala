@@ -14,22 +14,9 @@ import spray.routing.HttpServiceActor
 import spray.routing.Route
 
 /**
- * Abstract defintions of REST API for search service.
- */
-trait SearchRoutes extends HttpService {
-
-  def searchForBooks: Route
-
-  def similarBooks: Route
-
-  def searchSuggestions: Route
-
-}
-
-/**
  * API for search service, expressed as Spray routes.
  */
-trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport with BlinkboxHelpers {
+trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpers {
 
   import SearchApi._
 
@@ -38,7 +25,8 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
   def service: SearchService
 
   implicit val timeout = Timeout(5 seconds)
-  implicit val json4sJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
+  // TODO: Only use type hints in cases where it's needed.
+  implicit def json4sJacksonFormats = typedBlinkboxFormat(EntityTypeHints).withBigDecimal
 
   /**
    * The overall route for the service.
@@ -53,7 +41,10 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
     }
   }
 
-  override def searchForBooks =
+  /**
+   * Route for book search requests.
+   */
+  def searchForBooks =
     pathSuffix("books") {
       paged(defaultCount = 50) { page =>
         ordered() { sortOrder =>
@@ -69,7 +60,10 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
       }
     }
 
-  override def similarBooks =
+  /**
+   * Route for search for similar books.
+   */
+  def similarBooks =
     path("books" / Isbn / "similar") { id =>
       paged(defaultCount = 10) { page =>
         val result = service.findSimilar(id, page.offset, page.count)
@@ -81,13 +75,17 @@ trait SearchApi extends HttpService with SearchRoutes with Json4sJacksonSupport 
       }
     }
 
-  override def searchSuggestions =
+  /**
+   * Route for suggestions, i.e. auto-completion as you type in the search field.
+   */
+  def searchSuggestions =
     path("suggestions") {
       paged(defaultCount = 10) { page =>
         parameters('q) { query =>
           val result = service.suggestions(query, page.offset, page.count)
+          implicit val typedJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
           onSuccess(result) { suggestions =>
-            complete(SuggestionsResult("urn:blinkboxbooks:schema:list", suggestions))
+            complete(SuggestionsResult(suggestions))
           }
         }
       }
@@ -100,7 +98,6 @@ object SearchApi {
   // Value classes for responses.
 
   case class SuggestionsResult(
-    `type`: String,
     items: Seq[Entity])
 
   case class SearchResult(
@@ -110,6 +107,15 @@ object SearchApi {
     suggestions: Seq[String],
     books: Seq[Book],
     links: Seq[PageLink])
+
+  /**
+   * Custom type hints for JSON formats, helps with de-serialisation especially in
+   * polymorphic (mixed) lists.
+   */
+  val EntityTypeHints = ExplicitTypeHints(Map(
+    classOf[Author] -> "urn:blinkboxbooks:schema:suggestion:contributor",
+    classOf[Book] -> "urn:blinkboxbooks:schema:suggestion:book",
+    classOf[SuggestionsResult] -> "urn:blinkboxbooks:schema:list"))
 
 }
 

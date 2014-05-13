@@ -11,19 +11,16 @@ import com.blinkboxbooks.common.spray.BlinkboxHelpers._
  */
 
 sealed trait Entity {
-  val `type`: Option[String]
   val id: String
   val title: String
 }
 
 case class Author(
-  `type`: Option[String],
   id: String,
   title: String)
   extends Entity
 
 case class Book(
-  `type`: Option[String],
   id: String,
   title: String,
   authors: Seq[String])
@@ -55,13 +52,4 @@ trait SearchService {
   def findSimilar(id: String, offset: Int, count: Int): Future[BookSearchResult]
 
 }
-
-object SearchService {
-
-  // These ought to move into the Web layer, really.
-  val ContributorType = Some("urn:blinkboxbooks:schema:suggestion:contributor")
-  val BookType = Some("urn:blinkboxbooks:schema:suggestion:book")
-
-}
-
 

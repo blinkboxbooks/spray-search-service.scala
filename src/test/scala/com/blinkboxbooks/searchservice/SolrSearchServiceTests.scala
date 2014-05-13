@@ -35,16 +35,5 @@ class SolrSearchServiceTests extends FunSuite with BeforeAndAfter {
     fail("TODO")
   }
 
-  //  private class StubbedSolrServer(response: QueryResponse) extends SolrServer {
-  //    var queried: SolrParams = _
-  //
-  //    override def request(query: SolrParams): QueryResponse = {
-  //      queried = query
-  //      response
-  //    }
-  //
-  //    override def shutdown() {}
-  //  }
-
 }
 

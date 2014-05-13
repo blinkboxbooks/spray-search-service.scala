@@ -26,7 +26,6 @@ import spray.testkit.ScalatestRouteTest
 
 import Definitions._
 import SearchApi._
-import SearchService._
 
 @RunWith(classOf[JUnitRunner])
 class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with BeforeAndAfter
@@ -187,7 +186,6 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
           "More characters in query should result in more specific suggestions")
 
         assert(results.items.exists(item => item.title == "Bob the Builder"))
-        assert(results.items.exists(item => item.`type` == BookType))
       }
     }
 

@@ -8,6 +8,14 @@ import spray.routing.HttpService
 import spray.routing.MalformedQueryParamRejection
 import spray.routing.MissingQueryParamRejection
 import spray.routing.RejectionHandler
+import org.json4s.TypeHints
+import org.json4s.FieldSerializer
+import org.json4s.Formats
+import org.json4s.DateFormat
+import org.json4s.Serializer
+import java.lang.reflect.Type
+import org.json4s.NoTypeHints
+import org.json4s.DefaultFormats
 
 trait BlinkboxHelpers {
 
@@ -51,7 +59,7 @@ trait BlinkboxHelpers {
   def paged(defaultCount: Int) = parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount).as(Page)
 
   /** Custom directive for specifying sort order. */
-  def ordered(defaultOrder: SortOrder = SortOrder("RELEVANCE", desc = true)) = 
+  def ordered(defaultOrder: SortOrder = SortOrder("RELEVANCE", desc = true)) =
     parameters('order ? defaultOrder.order, 'desc.as[Boolean] ? defaultOrder.desc).as(SortOrder)
 
   /**
@@ -88,4 +96,22 @@ object BlinkboxHelpers {
   case class PageLink(rel: String, href: String)
 
   case class SortOrder(order: String, desc: Boolean)
+
+  /**
+   * Class that allows custom strings to be used as type hints for classes.
+   */
+  case class ExplicitTypeHints(customHints: Map[Class[_], String]) extends TypeHints {
+    override val hints = customHints.keys.toList
+    override def hintFor(clazz: Class[_]) = customHints.get(clazz).get
+    override def classFor(hint: String) = None
+  }
+
+  /**
+   * JSON format that uses the names the type hint fiel as "type".
+   */
+  def typedBlinkboxFormat(hints: TypeHints = NoTypeHints): Formats = new DefaultFormats {
+    override val typeHints: TypeHints = hints
+    override val typeHintFieldName: String = "type"
+  }
+
 }
