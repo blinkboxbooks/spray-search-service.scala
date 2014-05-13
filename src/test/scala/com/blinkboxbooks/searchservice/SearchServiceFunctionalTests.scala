@@ -127,7 +127,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     }
   }
 
-  test("search by descinding vs. ascending order") {
+  test("search by descending vs. ascending order") {
     // set desc=false in the query, check that the results are the same as 
     // for desc=true.
     fail("TODO")

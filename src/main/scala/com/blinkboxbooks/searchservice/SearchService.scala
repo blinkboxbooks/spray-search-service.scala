@@ -45,7 +45,7 @@ case class BookSearchResult(
   books: Seq[Book])
 
 /**
- * Interface to the business logic of performing searches.
+ * Interface containing the business logic of performing searches.
  */
 trait SearchService {
 

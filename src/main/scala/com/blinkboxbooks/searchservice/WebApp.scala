@@ -9,6 +9,9 @@ import com.blinkboxbooks.common.spray.BootedCore
 import org.apache.solr.client.solrj.impl.HttpSolrServer
 import org.apache.solr.client.solrj.impl.XMLResponseParser
 
+/**
+ * A trait that contains the bulk of the start-up code for the service.
+ */
 trait WebApi extends RouteConcatenation {
   this: Core =>
 
