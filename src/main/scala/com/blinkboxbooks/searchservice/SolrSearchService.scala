@@ -15,7 +15,7 @@ import org.apache.solr.client.solrj.SolrQuery.SortClause
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
-  val Fields = Array("isbn", "title", "author")
+  val Fields = Array("isbn", "title", "author", "author_guid")
   val SortOrders = Seq(("score", ORDER.desc), ("price", ORDER.asc), ("title", ORDER.asc))
   val RelevanceOrder = SortOrder("RELEVANCE", true)
 
@@ -96,9 +96,9 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     val bookSuggestion = docToBookSuggestion(includeType = true)(doc)
     val authorNames = getFields(doc, AUTHOR_FIELD).map(_.toString)
     val authorGuids = getFields(doc, AUTHOR_GUID_FIELD).map(_.toString)
-
+    
     val authors = (authorNames zip authorGuids).map {
-      case (authorName, authorGuid) => AuthorSuggestion(authorName, authorGuid)
+      case (authorName, authorGuid) => AuthorSuggestion(authorGuid, authorName)
     }
 
     Seq(bookSuggestion) ++ authors
