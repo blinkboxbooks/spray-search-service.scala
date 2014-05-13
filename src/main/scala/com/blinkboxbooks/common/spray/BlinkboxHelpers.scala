@@ -101,9 +101,10 @@ object BlinkboxHelpers {
    * Class that allows custom strings to be used as type hints for classes.
    */
   case class ExplicitTypeHints(customHints: Map[Class[_], String]) extends TypeHints {
+    private val hintToClass = customHints.map(_.swap)
     override val hints = customHints.keys.toList
     override def hintFor(clazz: Class[_]) = customHints.get(clazz).get
-    override def classFor(hint: String) = None
+    override def classFor(hint: String) = hintToClass.get(hint)
   }
 
   /**

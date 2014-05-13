@@ -108,7 +108,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       verify(service).search("some words", offset, count, SortOrder("POPULARITY", false))
 
       // Check that the JSON response is correct
-      val result = parse(body.data.asString).extract[SearchResult]
+      val result = parse(body.data.asString).extract[QuerySearchResult]
       assert(result.numberOfResults === searchResults.numberOfResults)
 
       // Check the expected links, ignoring their order in the returned list.
@@ -126,7 +126,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
     Get("/search/books?q=unmatched&count=10") ~> route ~> check {
       assert(status === OK)
-      val result = parse(body.data.asString).extract[SearchResult]
+      val result = parse(body.data.asString).extract[QuerySearchResult]
       assert(result.numberOfResults === 0)
 
       assert(result.links.size === 1)

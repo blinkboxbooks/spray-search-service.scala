@@ -25,7 +25,6 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
   def service: SearchService
 
   implicit val timeout = Timeout(5 seconds)
-  // TODO: Only use type hints in cases where it's needed.
   implicit def json4sJacksonFormats = typedBlinkboxFormat(EntityTypeHints).withBigDecimal
 
   /**
@@ -51,8 +50,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
           parameters('q) { query =>
             val result = service.search(query, page.offset, page.count, sortOrder)
             onSuccess(result) { result =>
-              complete(SearchResult("urn:blinkboxbooks:schema:search",
-                query, result.numberOfResults, result.suggestions, result.books,
+              complete(QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
                 links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books")))
             }
           }
@@ -68,8 +66,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
       paged(defaultCount = 10) { page =>
         val result = service.findSimilar(id, page.offset, page.count)
         onSuccess(result) { result =>
-          complete(SearchResult("urn:blinkboxbooks:schema:search:similar",
-            id, result.numberOfResults, Seq(), result.books,
+          complete(SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
             links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books/$id/similar")))
         }
       }
@@ -100,8 +97,14 @@ object SearchApi {
   case class SuggestionsResult(
     items: Seq[Entity])
 
-  case class SearchResult(
-    `type`: String,
+  case class QuerySearchResult(
+    id: String,
+    numberOfResults: Long,
+    suggestions: Seq[String],
+    books: Seq[Book],
+    links: Seq[PageLink])
+
+  case class SimilarBooksSearchResult(
     id: String,
     numberOfResults: Long,
     suggestions: Seq[String],
@@ -113,9 +116,11 @@ object SearchApi {
    * polymorphic (mixed) lists.
    */
   val EntityTypeHints = ExplicitTypeHints(Map(
-    classOf[Author] -> "urn:blinkboxbooks:schema:suggestion:contributor",
-    classOf[Book] -> "urn:blinkboxbooks:schema:suggestion:book",
-    classOf[SuggestionsResult] -> "urn:blinkboxbooks:schema:list"))
+    classOf[AuthorSuggestion] -> "urn:blinkboxbooks:schema:suggestion:contributor",
+    classOf[BookSuggestion] -> "urn:blinkboxbooks:schema:suggestion:book",
+    classOf[SuggestionsResult] -> "urn:blinkboxbooks:schema:list",
+    classOf[QuerySearchResult] -> "urn:blinkboxbooks:schema:search",
+    classOf[SimilarBooksSearchResult] -> "urn:blinkboxbooks:schema:search:similar"))
 
 }
 

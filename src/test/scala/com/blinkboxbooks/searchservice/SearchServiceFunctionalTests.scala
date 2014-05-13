@@ -1,5 +1,6 @@
 package com.blinkboxbooks.searchservice
 
+import com.blinkboxbooks.common.spray.BlinkboxHelpers._
 import java.nio.file.Files
 import java.io.InputStream
 import java.io.File
@@ -204,6 +205,26 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
   //
+  // Similar books.
+  //
+
+  test("simple query for similar books") {
+    Get("/search/books/1234567890123/similar") ~> route ~> check {
+      val results = similarBooksResult
+
+      fail("TODO|")
+    }
+  }
+
+  test("query for similar books with unknown ID") {
+    Get("/search/books/1234567890123/similar") ~> route ~> check {
+      val results = similarBooksResult
+
+      fail("TODO|")
+    }
+  }
+
+  //
   // Spelling suggestions.
   //
 
@@ -225,7 +246,8 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     }
   }
 
-  private def searchResult = parse(body.data.asString).extract[SearchResult]
+  private def searchResult = parse(body.data.asString).extract[QuerySearchResult]
+  private def similarBooksResult = parse(body.data.asString).extract[SimilarBooksSearchResult]
   private def suggestions = parse(body.data.asString).extract[SuggestionsResult]
 
   private def copy(input: String, output: File) {
@@ -260,3 +282,4 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
 }
+

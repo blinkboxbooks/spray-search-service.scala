@@ -35,7 +35,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     toBookSearchResult(response)
   }
 
-  override def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Entity]] = Future {
+  override def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Suggestion]] = Future {
     val queryStr = queryProvider.suggestionsQueryString(searchString)
     val query = solrQuery(queryStr, offset, count, RelevanceOrder)
     val response = solrServer.query(query)
@@ -86,23 +86,28 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
       doc.getFieldValue(TITLE_FIELD).toString,
       getFields(doc, AUTHOR_FIELD).map(_.toString))
 
+  private def docToBookSuggestion(includeType: Boolean)(doc: SolrDocument): BookSuggestion =
+    BookSuggestion(doc.getFieldValue(ISBN_FIELD).toString,
+      doc.getFieldValue(TITLE_FIELD).toString,
+      getFields(doc, AUTHOR_FIELD).map(_.toString))
+
   /** Return entities for the matched book, as well as the authors of the book. */
-  private def docToEntities(doc: SolrDocument): Seq[Entity] = {
-    val book = docToBook(includeType = true)(doc)
+  private def docToSuggestions(doc: SolrDocument): Seq[Suggestion] = {
+    val bookSuggestion = docToBookSuggestion(includeType = true)(doc)
     val authorNames = getFields(doc, AUTHOR_FIELD).map(_.toString)
     val authorGuids = getFields(doc, AUTHOR_GUID_FIELD).map(_.toString)
 
     val authors = (authorNames zip authorGuids).map {
-      case (authorName, authorGuid) => Author(authorName, authorGuid)
+      case (authorName, authorGuid) => AuthorSuggestion(authorName, authorGuid)
     }
 
-    Seq(book) ++ authors
+    Seq(bookSuggestion) ++ authors
   }
 
-  private def toSuggestions(response: QueryResponse): Seq[Entity] =
+  private def toSuggestions(response: QueryResponse): Seq[Suggestion] =
     response.getResults.asScala
       .filter(doc => !hasMissingBookFields(doc))
-      .flatMap(docToEntities)
+      .flatMap(docToSuggestions)
       .toList
 
   private def hasMissingBookFields(doc: SolrDocument) =

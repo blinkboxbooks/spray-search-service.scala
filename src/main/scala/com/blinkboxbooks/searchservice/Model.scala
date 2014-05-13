@@ -26,6 +26,19 @@ case class Book(
   authors: Seq[String])
   extends Entity
 
+trait Suggestion extends Entity
+
+case class AuthorSuggestion(
+  id: String,
+  title: String)
+  extends Suggestion
+
+case class BookSuggestion(
+  id: String,
+  title: String,
+  authors: Seq[String])
+  extends Suggestion
+
 case class BookSearchResult(
   numberOfResults: Long,
   suggestions: Seq[String],
@@ -37,9 +50,9 @@ case class BookSearchResult(
 trait SearchService {
 
   /**
-   * Run search using text query.
+   * Auto-completion: get suggestions based on characters typed so far.
    */
-  def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Entity]]
+  def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Suggestion]]
 
   /**
    * Run search using text query.
