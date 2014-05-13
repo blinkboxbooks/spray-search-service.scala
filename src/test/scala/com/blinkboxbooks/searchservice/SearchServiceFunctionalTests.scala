@@ -37,6 +37,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   var searchService: SearchService = _
 
   override val baseUrl = "service/search"
+  override val searchTimeout = 5
   override def service: SearchService = searchService
   override implicit def actorRefFactory = system
 

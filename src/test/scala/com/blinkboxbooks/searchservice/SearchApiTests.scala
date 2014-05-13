@@ -21,6 +21,7 @@ import SearchApi._
 class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTest with MockitoSugar with SearchApi {
 
   override val baseUrl = "service/search"
+  override val searchTimeout = 5
   override def service: SearchService = mockService
   var mockService: SearchService = _
 
@@ -33,9 +34,9 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     Book("9780141920061", "Hard Times", List("Charles Dickens"))))
 
   val suggestions = List(
-    Book("9781443414005", "Bleak House", List("Charles Dickens")),
-    Author("1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
-    Book("9780141920061", "Hard Times", List("Charles Dickens")))
+    BookSuggestion("9781443414005", "Bleak House", List("Charles Dickens")),
+    AuthorSuggestion("1d1f0d88a461e2e143c44c7736460c663c27ef3b", "Charles Dickens"),
+    BookSuggestion("9780141920061", "Hard Times", List("Charles Dickens")))
 
   val similar = BookSearchResult(101, Seq(), List(
     Book("9781443414005", "Block House", List("Charles Smith")),
@@ -170,6 +171,8 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       assert(status === OK)
       assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json")
 
+      println("*** GOT: " + body.data.asString)
+
       val result = parse(body.data.asString).extract[SuggestionsResult]
       assert(result.items === suggestions, "Got: " + body.data.asString)
     }
@@ -198,8 +201,10 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       verify(service).findSimilar(isbn, 0, 10)
 
       // Check returned results.
-      val result = parse(body.data.asString).extract[BookSearchResult]
-      assert(result === similar)
+      val result = parse(body.data.asString).extract[SimilarBooksSearchResult]
+      assert(result.numberOfResults === similar.numberOfResults)
+      assert(result.books === similar.books)
+      assert(result.suggestions === similar.suggestions)
     }
   }
 
@@ -213,8 +218,10 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
       // Check returned results.
       val str = body.data.asString
-      val result = parse(body.data.asString).extract[BookSearchResult]
-      assert(result === similar)
+      val result = parse(body.data.asString).extract[SimilarBooksSearchResult]
+      assert(result.numberOfResults === similar.numberOfResults)
+      assert(result.books === similar.books)
+      assert(result.suggestions === similar.suggestions)
     }
   }
 
@@ -244,7 +251,6 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   }
 
   // TODO: Many other tests...
-  // Also: create a separate test case for functional tests, using an embedded in-memory instance of Solr.
-
   // *** Check suggestions ***
+
 }

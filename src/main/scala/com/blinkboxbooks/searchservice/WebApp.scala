@@ -19,13 +19,15 @@ trait WebApi extends RouteConcatenation {
   val model = new SolrSearchService(solrServer)
 
   val baseUrl = "search" // TODO: Get from config.
-  val service = system.actorOf(Props(new SearchWebService(model, baseUrl)), "search-service")
+  val searchTimeout = 5 // TODO: Get from config.
+  val service = system.actorOf(Props(new SearchWebService(model, baseUrl, searchTimeout)), "search-service")
 }
 
 /**
  * Actor implementing a search service that delegates requests to a given model.
  */
-class SearchWebService(override val service: SearchService, override val baseUrl: String)
+class SearchWebService(override val service: SearchService, override val baseUrl: String,
+  override val searchTimeout: Int)
   extends HttpServiceActor with SearchApi {
 
   def receive = runRoute(route)

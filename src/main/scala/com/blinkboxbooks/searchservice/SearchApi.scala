@@ -22,9 +22,10 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
 
   // Abstract definitions, to be provided by concrete implementations.
   val baseUrl: String
+  val searchTimeout: Int
   def service: SearchService
 
-  implicit val timeout = Timeout(5 seconds)
+  implicit val timeout = Timeout(searchTimeout seconds)
   implicit def json4sJacksonFormats = typedBlinkboxFormat(EntityTypeHints).withBigDecimal
 
   /**
