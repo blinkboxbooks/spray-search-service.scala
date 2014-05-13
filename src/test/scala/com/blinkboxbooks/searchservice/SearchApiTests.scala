@@ -171,8 +171,6 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       assert(status === OK)
       assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json")
 
-      println("*** GOT: " + body.data.asString)
-
       val result = parse(body.data.asString).extract[SuggestionsResult]
       assert(result.items === suggestions, "Got: " + body.data.asString)
     }
