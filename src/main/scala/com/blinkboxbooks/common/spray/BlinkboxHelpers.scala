@@ -62,6 +62,10 @@ trait BlinkboxHelpers {
   def ordered(defaultOrder: SortOrder = SortOrder("RELEVANCE", desc = true)) =
     parameters('order ? defaultOrder.order, 'desc.as[Boolean] ? defaultOrder.desc).as(SortOrder)
 
+}
+
+object BlinkboxHelpers {
+
   /**
    * Generate links for use in paged results.
    */
@@ -85,16 +89,15 @@ trait BlinkboxHelpers {
     List(thisPage, previousPage, nextPage).flatten
   }
 
-}
-
-object BlinkboxHelpers {
-
   case class Page(offset: Int, count: Int) {
     require(offset >= 0, "Offset must be 0 or greater")
     require(count > 0, "Count must be greater than 0")
   }
   case class PageLink(rel: String, href: String)
 
+  /**
+   * Value class for sorting parameters.
+   */
   case class SortOrder(order: String, desc: Boolean)
 
   /**

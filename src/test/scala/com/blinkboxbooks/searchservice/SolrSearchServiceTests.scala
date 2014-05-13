@@ -27,11 +27,11 @@ class SolrSearchServiceTests extends FunSuite with BeforeAndAfter {
     searchService = new SolrSearchService(solrServer)
   }
 
-  test("Successful search") {
+  ignore("Successful search") {
     fail("TODO")
   }
 
-  test("Search with invalid query") {
+  ignore("Search with invalid query") {
     fail("TODO")
   }
 
