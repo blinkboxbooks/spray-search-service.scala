@@ -14,7 +14,7 @@ import org.scalatest.junit.JUnitRunner
 import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
 
-import com.blinkboxbooks.common.spray.BlinkboxHelpers._
+import com.blinkboxbooks.common.spray.BlinkboxService._
 import SearchApi._
 
 @RunWith(classOf[JUnitRunner])

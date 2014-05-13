@@ -1,6 +1,6 @@
 package com.blinkboxbooks.searchservice
 
-import com.blinkboxbooks.common.spray.BlinkboxHelpers._
+import com.blinkboxbooks.common.spray.BlinkboxService._
 import java.nio.file.Files
 import java.io.InputStream
 import java.io.File
@@ -25,8 +25,8 @@ import org.scalatest.mock.MockitoSugar
 import scala.collection.JavaConverters._
 import spray.testkit.ScalatestRouteTest
 
-import Definitions._
 import SearchApi._
+import SolrConstants._
 
 @RunWith(classOf[JUnitRunner])
 class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with BeforeAndAfter
@@ -82,12 +82,18 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     addBook("100000000501", "Walking for Dummies", Seq("Jane Smith"), "Everything you ever wanted to know about walking", 5.0)
     addBook("100000000502", "Walking for Brummies", Seq("John Smythe"), "All the best walks in the Midlands countryside", 6.0)
 
-    // Add a series of very similar books by the same author.
+    // Add a series of very similar books.
     for (vol <- 1 to 5) {
       // Each book in the series become less popular yet more expensive.
       addBook(s"100000000100${vol}", s"Game of Drones Volume $vol",
         Seq("Martin George"), s"Book $vol in the epic series", price = 10.0 + vol, volume = Some((10 - vol) * 10000))
     }
+
+    // Add some more books by the author that wrote the series above.
+    addBook(s"1000000002001", s"My Epic Life",
+      Seq("Martin George"), s"The story of the genius author", price = 25.0)
+    addBook(s"1000000002001", s"101 Porridge Success Recipes",
+      Seq("Martin George"), s"Every variety of porridge you can imagine and then some", price = 7.50)
 
     // Add some free books.
     addBook("100000000901", "Don Quixote", Seq("Miguel de Cervantes"), "A lone rider and his battle with the windmills", 0.0)
@@ -119,6 +125,12 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
       assert(book.authors.toSet == Set("John Smith"))
       assert(result.suggestions === Seq(), "Shouldn't offer spelling suggestions")
     }
+  }
+
+  test("search by descinding vs. ascending order") {
+    // set desc=false in the query, check that the results are the same as 
+    // for desc=true.
+    fail("TODO")
   }
 
   test("search for book not in index") {
@@ -213,13 +225,19 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     Get("/search/books/1234567890123/similar") ~> route ~> check {
       val results = similarBooksResult
 
+      // Get one book in a series and check that the top results
+      // are the other books in the series.
+
       fail("TODO|")
     }
   }
 
   test("query for similar books with unknown ID") {
+    // Make a request that results in no books coming back.
     Get("/search/books/1234567890123/similar") ~> route ~> check {
       val results = similarBooksResult
+
+      // The code for this need fixing as getResults in the Solr response returns null when nothing was found (ugh!).
 
       fail("TODO|")
     }

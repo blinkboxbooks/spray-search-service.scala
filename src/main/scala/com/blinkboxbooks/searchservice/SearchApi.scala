@@ -1,8 +1,9 @@
 package com.blinkboxbooks.searchservice
 
 import akka.util.Timeout
-import com.blinkboxbooks.common.spray.BlinkboxHelpers
-import com.blinkboxbooks.common.spray.BlinkboxHelpers._
+import com.blinkboxbooks.common.spray.BlinkboxService
+import com.blinkboxbooks.common.spray.BlinkboxService._
+import com.blinkboxbooks.common.Utils._
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 import scala.concurrent.{ Future, ExecutionContext }
@@ -16,7 +17,7 @@ import spray.routing.Route
 /**
  * API for search service, expressed as Spray routes.
  */
-trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpers {
+trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxService {
 
   import SearchApi._
 
@@ -31,12 +32,10 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxHelpe
   /**
    * The overall route for the service.
    */
-  def route = handleRejections(invalidParamHandler) {
-    standardResponseHeaders {
-      get {
-        pathPrefix("search") {
-          searchForBooks ~ similarBooks ~ searchSuggestions
-        }
+  def route = standardResponseHeaders {
+    get {
+      pathPrefix("search") {
+        searchForBooks ~ similarBooks ~ searchSuggestions
       }
     }
   }

@@ -1,6 +1,6 @@
 package com.blinkboxbooks.common.spray
 
-import com.blinkboxbooks.common.spray.BlinkboxHelpers._
+import com.blinkboxbooks.common.spray.BlinkboxService._
 
 import org.mockito.Mockito._
 import org.mockito.Matchers._

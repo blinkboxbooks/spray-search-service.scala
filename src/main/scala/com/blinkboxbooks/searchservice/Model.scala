@@ -1,7 +1,7 @@
 package com.blinkboxbooks.searchservice
 
 import scala.concurrent.Future
-import com.blinkboxbooks.common.spray.BlinkboxHelpers._
+import com.blinkboxbooks.common.spray.BlinkboxService._
 
 /**
  * Domain classes for search results.

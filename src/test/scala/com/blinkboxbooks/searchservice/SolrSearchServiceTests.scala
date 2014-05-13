@@ -10,7 +10,7 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.FunSuite
-import com.blinkboxbooks.common.spray.BlinkboxHelpers._
+import com.blinkboxbooks.common.spray.BlinkboxService._
 import org.apache.solr.common.params.SolrParams
 import org.scalatest.junit.JUnitRunner
 import org.apache.solr.client.solrj.response.QueryResponse

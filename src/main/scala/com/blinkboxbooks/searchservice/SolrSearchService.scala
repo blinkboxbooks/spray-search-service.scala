@@ -1,25 +1,25 @@
 package com.blinkboxbooks.searchservice
 
-import com.blinkboxbooks.common.spray.BlinkboxHelpers.SortOrder
+import com.blinkboxbooks.common.spray.BlinkboxService.SortOrder
+import java.util.Collections
 import org.apache.solr.client.solrj.SolrServer
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.SolrQuery.ORDER
+import org.apache.solr.client.solrj.SolrQuery.SortClause
 import org.apache.solr.client.solrj.response.QueryResponse
 import org.apache.solr.common.SolrDocument
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import Definitions._
-import java.util.Collections
-import org.apache.solr.client.solrj.SolrQuery.SortClause
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
-  val Fields = Array("isbn", "title", "author", "author_guid")
-  val SortOrders = Seq(("score", ORDER.desc), ("price", ORDER.asc), ("title", ORDER.asc))
-  val RelevanceOrder = SortOrder("RELEVANCE", true)
+  import SolrConstants._
 
-  val queryProvider = new StandardSolrQueryProvider()
+  private val Fields = Array("isbn", "title", "author", "author_guid")
+  private val RelevanceOrder = SortOrder("RELEVANCE", true)
+
+  private val queryProvider = new StandardSolrQueryProvider()
 
   override def search(searchString: String, offset: Int, count: Int, order: SortOrder) = Future {
     val queryStr = queryProvider.queryString(searchString)
@@ -42,7 +42,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     toSuggestions(response)
   }
 
-  // TODO: Should this be a list of orders??
+  // TODO: Should this be a list of orders?
   private def solrQuery(queryStr: String, offset: Int, count: Int, order: SortOrder): SolrQuery = {
     val query = new SolrQuery()
       .setFields(Fields: _*)
@@ -96,7 +96,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     val bookSuggestion = docToBookSuggestion(includeType = true)(doc)
     val authorNames = getFields(doc, AUTHOR_FIELD).map(_.toString)
     val authorGuids = getFields(doc, AUTHOR_GUID_FIELD).map(_.toString)
-    
+
     val authors = (authorNames zip authorGuids).map {
       case (authorName, authorGuid) => AuthorSuggestion(authorGuid, authorName)
     }
@@ -118,5 +118,25 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   // TODO: Make implicit method on SolrDocument!
   private def getFields(doc: SolrDocument, fieldName: String): Array[AnyRef] =
     Option(doc.getFieldValues(fieldName)).getOrElse(Collections.emptyList).toArray
+
+}
+
+object SolrConstants {
+
+  // Field names.
+  private[searchservice] val SCORE_FIELD = "score"
+  private[searchservice] val VOLUME_FIELD = "volume"
+  private[searchservice] val PRICE_FIELD = "price"
+  private[searchservice] val PUBLICATION_DATE_FIELD = "publication_date"
+  private[searchservice] val NAME_FIELD = "name_field"
+  private[searchservice] val CONTENT_FIELD = "content_field"
+  private[searchservice] val AUTHOR_FIELD = "author"
+  private[searchservice] val AUTHOR_EXACT_FIELD = "author_exact_field"
+  private[searchservice] val AUTHOR_GUID_FIELD = "author_guid"
+  private[searchservice] val AUTHOR_SORT_FIELD = "author_sort"
+  private[searchservice] val TITLE_EXACT_FIELD = "title_exact_field"
+  private[searchservice] val QUERY_PRICE = "price"
+  private[searchservice] val ISBN_FIELD = "isbn"
+  private[searchservice] val TITLE_FIELD = "title"
 
 }

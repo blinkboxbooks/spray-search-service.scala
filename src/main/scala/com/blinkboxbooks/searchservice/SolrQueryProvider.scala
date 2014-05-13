@@ -1,11 +1,12 @@
 package com.blinkboxbooks.searchservice
 
-import org.apache.commons.lang.StringUtils
+import com.blinkboxbooks.common.Utils.Isbn
 import com.google.common.base.CharMatcher
+import org.apache.commons.lang.StringUtils
 import scala.util.{ Try, Success, Failure }
 
 import QueryBuilder.Operator
-import Definitions._
+import SolrConstants._
 
 /** Common interface for things that takes user searches and turns them to Solr queries. */
 trait SolrQueryProvider {

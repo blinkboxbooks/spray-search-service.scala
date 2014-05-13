@@ -17,11 +17,11 @@ import java.lang.reflect.Type
 import org.json4s.NoTypeHints
 import org.json4s.DefaultFormats
 
-trait BlinkboxHelpers {
+trait BlinkboxService {
 
   this: HttpService =>
 
-  import BlinkboxHelpers._
+  import BlinkboxService._
 
   // Request directives.
 
@@ -34,37 +34,35 @@ trait BlinkboxHelpers {
     binary = true, // binary as the encoding is defined as utf-8 by the json spec
     compressible = true))
 
-  // TODO: I don't think these are actually needed?
-  val invalidParamHandler = RejectionHandler {
-    case MalformedQueryParamRejection(paramName, _, _) :: _ =>
-      complete(BadRequest, s"Invalid value for $paramName parameter")
-    case MissingQueryParamRejection(paramName) :: _ =>
-      complete(BadRequest, s"Missing value for $paramName parameter")
-  }
-
-  /** Matcher for ISBN. */
-  //TODO: Add ^ and $, no?!
-  //TODO: Might as well reuse the common definition that's used elsewhere! Just add a capture group around it too;
-  // presumably this wouldn't cause a problem when used in a route?
-  val Isbn = """\d{13}""".r
-
+  //
   // Response directives.
+  //
 
+  /**
+   * Directive that removes the character set encoding from content types, typically "; UTF-8".
+   */
   def removeCharsetEncoding(entity: HttpEntity) = entity.flatMap(e => HttpEntity(e.contentType.withoutDefinedCharset, e.data))
 
+  /**
+   * Combination of all response directives that are usually applied to service endpoints.
+   */
   val standardResponseHeaders = mapHttpResponseEntity(removeCharsetEncoding) &
     respondWithMediaType(`application/vnd.blinkboxbooks.data.v1+json`)
 
-  /** Custom directive for extracting and validating page parameters (offset and count). */
+  /**
+   * Custom directive for extracting and validating page parameters (offset and count).
+   */
   def paged(defaultCount: Int) = parameters('offset.as[Int] ? 0, 'count.as[Int] ? defaultCount).as(Page)
 
-  /** Custom directive for specifying sort order. */
+  /**
+   * Custom directive for specifying sort order.
+   */
   def ordered(defaultOrder: SortOrder = SortOrder("RELEVANCE", desc = true)) =
     parameters('order ? defaultOrder.order, 'desc.as[Boolean] ? defaultOrder.desc).as(SortOrder)
 
 }
 
-object BlinkboxHelpers {
+object BlinkboxService {
 
   /**
    * Generate links for use in paged results.
