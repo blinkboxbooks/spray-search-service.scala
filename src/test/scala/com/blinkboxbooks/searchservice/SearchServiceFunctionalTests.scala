@@ -109,7 +109,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     addBook("100000000803", "Selected Secrets", Seq(), "You know what", 5.00)
 
     // Add books with no price data.
-    addBook("100000000701", "Superman - my role in his downfall", Seq("Lex Luthor"), "A documentary", None, None)
+    addBook("100000000701", Some("Superman - my role in his downfall"), Seq("Lex Luthor"), "A documentary", None, None)
 
     solrServer.commit()
   }
@@ -225,11 +225,24 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
   test("suggestions when query has no matches") {
-    fail("TODO")
+    Get("/search/suggestions?q=qwerty") ~> route ~> check {
+      assert(status === OK)
+      val results = suggestions
+      assert(results.items === List(), "Should get empty list of suggestions")
+    }
   }
 
   test("suggestions when some books are missing fields") {
-    fail("TODO")
+    // Add a book with no title.
+    val id = "1122334455667"
+    addBook(id, None, Seq("John Smith"), "This book has no title", Some(10.0), Some(1000))
+
+    // Check that suggestions ignore this book.
+    Get("/search/suggestions?q=john+smith") ~> route ~> check {
+      assert(status === OK)
+      val results = suggestions
+      assert(!suggestions.items.exists(item => item.id == id))
+    }
   }
 
   //
@@ -316,14 +329,14 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   private def addBook(isbn: String, title: String, authors: Seq[String], description: String,
     price: Double, volume: Option[Int] = None) {
-    addBook(isbn, title, authors, description, Some(price), volume)
+    addBook(isbn, Some(title), authors, description, Some(price), volume)
   }
 
-  private def addBook(isbn: String, title: String, authors: Seq[String], description: String,
+  private def addBook(isbn: String, title: Option[String], authors: Seq[String], description: String,
     price: Option[Double], volume: Option[Int]) {
     val doc = new SolrInputDocument()
     doc.addField(ISBN_FIELD, isbn)
-    doc.addField(TITLE_FIELD, title)
+    title.foreach(t => doc.addField(TITLE_FIELD, t))
     authors.foreach(author => {
       doc.addField(AUTHOR_FIELD, author)
       doc.addField(AUTHOR_SORT_FIELD, author)
