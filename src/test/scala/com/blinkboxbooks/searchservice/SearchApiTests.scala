@@ -224,16 +224,10 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   }
 
   test("request for similar books with invalid ISBN") {
-    // TODO: Refactor to avoid duplication
-    Get("/search/books/123456789012/similar") ~> route ~> check {
-      assert(!handled)
-    }
-    Get("/search/books/12345678901234/similar") ~> route ~> check {
-      assert(!handled)
-    }
-    Get("/search/books/xyz/similar") ~> route ~> check {
-      assert(!handled)
-    }
+    for (id <- Seq("123456789012", "12345678901234", "xyz"))
+      Get(s"/search/books/$id/similar") ~> route ~> check {
+        assert(!handled)
+      }
   }
 
   test("invalid request for similar books, with unwanted slash at end of URL") {
@@ -247,7 +241,5 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       assert(!handled)
     }
   }
-
-  // TODO: Many other tests...
 
 }
