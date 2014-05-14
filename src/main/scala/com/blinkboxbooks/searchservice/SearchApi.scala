@@ -13,6 +13,9 @@ import spray.httpx.Json4sJacksonSupport
 import spray.routing.HttpService
 import spray.routing.HttpServiceActor
 import spray.routing.Route
+import spray.http.StatusCodes._
+import spray.util.LoggingContext
+import spray.routing.ExceptionHandler
 
 /**
  * API for search service, expressed as Spray routes.
@@ -28,6 +31,15 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxServi
 
   implicit val timeout = Timeout(searchTimeout seconds)
   implicit def json4sJacksonFormats = typedBlinkboxFormat(EntityTypeHints).withBigDecimal
+
+  implicit def myExceptionHandler(implicit log: LoggingContext) =
+    ExceptionHandler {
+      case e: IllegalArgumentException =>
+        requestUri { uri =>
+          log.warning("Request to {} could not be handled normally", uri)
+          complete(BadRequest, s"Invalid request: ${e.getMessage}")
+        }
+    }
 
   /**
    * The overall route for the service.
