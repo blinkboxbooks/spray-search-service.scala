@@ -27,7 +27,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     val queryStr = queryProvider.queryString(searchString)
     val query = solrQuery(queryStr, offset, count, order, spellCheck = true)
     val response = solrServer.query(query)
-    toBookSearchResult(response, Some(searchString))
+    toBookSearchResult(response, searchString)
   }
 
   override def findSimilar(id: String, offset: Int, count: Int): Future[BookSearchResult] = Future {
@@ -35,7 +35,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     val query = solrQuery(queryStr, offset, count, RelevanceOrder, spellCheck = false)
       .setRequestHandler("/mlt") // TODO: Make req handler configurable
     val response = solrServer.query(query)
-    toBookSearchResult(response)
+    toBookSearchResult(response, Seq())
   }
 
   override def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Suggestion]] = Future {
@@ -77,19 +77,16 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     case _ => throw new IllegalArgumentException(s"Unsupported sort order: $order")
   }
 
-  private def toBookSearchResult(response: QueryResponse, searchString: Option[String] = None) = {
+  private def toBookSearchResult(response: QueryResponse, originalQuery: String): BookSearchResult = {
+    val topReplacements = response.getSpellCheckResponse.getSuggestionMap.asScala.toMap
+    val updatedQuery = replaceTerms(originalQuery, topReplacements)
+    val suggestedQueries = if (updatedQuery != originalQuery) Seq(updatedQuery) else Seq()
 
+    toBookSearchResult(response, suggestedQueries)
+  }
+
+  private def toBookSearchResult(response: QueryResponse, suggestedQueries: Seq[String]) = {
     val books = response.getResults.asScala.map(docToBook(includeType = false))
-
-    val suggestedQueries = searchString match {
-      case None => Seq()
-      case Some(query) =>
-        val topReplacements = response.getSpellCheckResponse.getSuggestionMap.asScala.toMap
-        //  .map { case (token, alternatives) => (token, alternatives.getAlternatives.asScala.toList.take(1)) }
-        val updatedQuery = replaceTerms(query, topReplacements)
-        if (updatedQuery != query) Seq(replaceTerms(query, topReplacements)) else Seq()
-    }
-
     BookSearchResult(response.getResults.getNumFound(), suggestedQueries, books.toList)
   }
 
