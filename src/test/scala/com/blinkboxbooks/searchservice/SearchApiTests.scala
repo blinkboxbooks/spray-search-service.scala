@@ -249,6 +249,5 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   }
 
   // TODO: Many other tests...
-  // *** Check suggestions ***
 
 }

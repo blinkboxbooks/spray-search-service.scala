@@ -101,8 +101,9 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     addBook("100000000903", "The Count of Monte Cristo", Seq("Alexandre Dumas"), "Blah blah blah", 0.0)
 
     // Some books with no author.
-    addBook("100000000801", "Writer Anonymous", Seq(), "A documentary", 0.0)
-    addBook("100000000802", "Ghost Writers", Seq(), "Who wrote this book?", 0.0)
+    addBook("100000000801", "Writer Anonymous", Seq(), "A documentary", 3.49)
+    addBook("100000000802", "Ghost Writers", Seq(), "Who wrote this book?", 4.49)
+    addBook("100000000803", "Selected Secrets", Seq(), "You know what", 5.00)
 
     // Add books with no price data.
     addBook("100000000701", "Superman - my role in his downfall", Seq("Lex Luthor"), "A documentary", None, None)
@@ -181,7 +182,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
   test("search for specific free books") {
-    Get("/search/books?q=Free+Smythe") ~> route ~> check {
+    Get("/search/books?q=Free+Selected") ~> route ~> check {
       val result = searchResult
       assert(result.numberOfResults === 1, "Should match the specific 0 price")
       assert(result.books.size === 1)

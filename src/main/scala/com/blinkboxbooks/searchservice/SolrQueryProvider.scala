@@ -8,7 +8,9 @@ import scala.util.{ Try, Success, Failure }
 import QueryBuilder.Operator
 import SolrConstants._
 
-/** Common interface for things that takes user searches and turns them to Solr queries. */
+/**
+ * Common interface for things that takes user search strings and turns them to Solr queries.
+ */
 trait SolrQueryProvider {
 
   /**
@@ -37,6 +39,7 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
     val query = clean(searchString) match {
       case q if StringUtils.isBlank(q) => throw new Exception(s"Invalid or empty search term: $q")
       case Isbn(isbn) => QueryBuilder.build("isbn", isbn)
+      case q if freeBooksQueries.contains(q) => QueryBuilder.build(PRICE_FIELD, "0");
       case q if q.startsWith("free ") => buildFreeQuery(q.substring(5))
       case q if q.endsWith(" free") => buildFreeQuery(q.substring(0, q.length() - 5))
       case q => buildQuery(q)
@@ -56,11 +59,11 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
 
 object StandardSolrQueryProvider {
 
-  val freeBooksQueries = Seq("free")
-  val nameFieldBoost = 10
-  val contentFieldBoost = 1
-  val authorExactBoost = 25
-  val titleExactBoost = 25
+  private val freeBooksQueries = Seq("free")
+  private val nameFieldBoost = 10
+  private val contentFieldBoost = 1
+  private val authorExactBoost = 25
+  private val titleExactBoost = 25
 
   val validCharacterMatcher = CharMatcher.JAVA_LETTER_OR_DIGIT
     .or(CharMatcher.anyOf("-,.';!"))

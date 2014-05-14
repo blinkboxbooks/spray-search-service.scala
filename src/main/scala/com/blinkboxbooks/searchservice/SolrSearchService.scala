@@ -78,9 +78,13 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   }
 
   private def toBookSearchResult(response: QueryResponse, originalQuery: String): BookSearchResult = {
-    val topReplacements = response.getSpellCheckResponse.getSuggestionMap.asScala.toMap
-    val updatedQuery = replaceTerms(originalQuery, topReplacements)
-    val suggestedQueries = if (updatedQuery != originalQuery) Seq(updatedQuery) else Seq()
+    val suggestedQueries = Option(response.getSpellCheckResponse) match {
+      case None => Seq()
+      case Some(spellCheckResponse) =>
+        val topReplacements = spellCheckResponse.getSuggestionMap.asScala.toMap
+        val updatedQuery = replaceTerms(originalQuery, topReplacements)
+        if (updatedQuery != originalQuery) Seq(updatedQuery) else Seq()
+    }
 
     toBookSearchResult(response, suggestedQueries)
   }
