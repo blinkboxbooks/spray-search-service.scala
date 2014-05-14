@@ -13,10 +13,12 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.apache.solr.common.params.SpellingParams
+import java.util.Collection
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
   import SolrConstants._
+  import SolrUtils._
 
   private val Fields = Array("isbn", "title", "author", "author_guid")
   private val RelevanceOrder = SortOrder("RELEVANCE", true)
@@ -108,20 +110,20 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   }
 
   private def docToBook(includeType: Boolean)(doc: SolrDocument): Book =
-    Book(doc.getFieldValue(ISBN_FIELD).toString,
-      doc.getFieldValue(TITLE_FIELD).toString,
-      getFields(doc, AUTHOR_FIELD).map(_.toString))
+    Book(doc.getSingleFieldValue(ISBN_FIELD),
+      doc.getSingleFieldValue(TITLE_FIELD),
+      doc.getAllFieldValues(AUTHOR_FIELD))
 
   private def docToBookSuggestion(includeType: Boolean)(doc: SolrDocument): BookSuggestion =
-    BookSuggestion(doc.getFieldValue(ISBN_FIELD).toString,
-      doc.getFieldValue(TITLE_FIELD).toString,
-      getFields(doc, AUTHOR_FIELD).map(_.toString))
+    BookSuggestion(doc.getSingleFieldValue(ISBN_FIELD),
+      doc.getSingleFieldValue(TITLE_FIELD),
+      doc.getAllFieldValues(AUTHOR_FIELD))
 
   /** Return entities for the matched book, as well as the authors of the book. */
   private def docToSuggestions(doc: SolrDocument): Seq[Suggestion] = {
     val bookSuggestion = docToBookSuggestion(includeType = true)(doc)
-    val authorNames = getFields(doc, AUTHOR_FIELD).map(_.toString)
-    val authorGuids = getFields(doc, AUTHOR_GUID_FIELD).map(_.toString)
+    val authorNames = doc.getAllFieldValues(AUTHOR_FIELD)
+    val authorGuids = doc.getAllFieldValues(AUTHOR_GUID_FIELD)
 
     val authors = (authorNames zip authorGuids).map {
       case (authorName, authorGuid) => AuthorSuggestion(authorGuid, authorName)
@@ -139,12 +141,6 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   private def hasMissingBookFields(doc: SolrDocument) =
     !Option(doc.getFieldValues(AUTHOR_FIELD)).isDefined ||
       !Option(doc.getFieldValue(TITLE_FIELD)).isDefined
-
-  /** Helper to make SolrJ Java API a bit more helpful, to stop it from returning nulls. */
-  // TODO: Make implicit method on SolrDocument!
-  // ...also, make a corresponding getFieldValue method that converts non-collection values to strings?
-  private def getFields(doc: SolrDocument, fieldName: String): Array[AnyRef] =
-    Option(doc.getFieldValues(fieldName)).getOrElse(Collections.emptyList).toArray
 
 }
 
