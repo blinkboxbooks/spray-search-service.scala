@@ -283,6 +283,23 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     }
   }
 
+  test("Terms that are similar enough to known words to cause a spelling suggestion") {
+    for (searchString <- Seq("grame", "gamer", "gamert", "gbme", "gamte")) {
+      Get(s"/search/books?q=$searchString") ~> route ~> check {
+        assert(searchResult.suggestions === List("game"), s"Search for '$searchString' should product spelling suggestion")
+      }
+    }
+  }
+
+  test("Terms that are too different from any known words") {
+    for (searchString <- Seq("tiddlywinks", "frone", "gramers")) {
+      Get(s"/search/books?q=$searchString") ~> route ~> check {
+        val suggestions = searchResult.suggestions
+        assert(suggestions === List(), s"Search for '$searchString' shouldn't result in suggestions, got '$suggestions'")
+      }
+    }
+  }
+
   private def searchResult = parse(body.data.asString).extract[QuerySearchResult]
   private def similarBooksResult = parse(body.data.asString).extract[SimilarBooksSearchResult]
   private def suggestions = parse(body.data.asString).extract[SuggestionsResult]
