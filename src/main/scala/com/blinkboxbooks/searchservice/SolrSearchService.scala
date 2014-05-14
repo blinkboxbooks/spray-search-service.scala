@@ -27,7 +27,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     val queryStr = queryProvider.queryString(searchString)
 
     // Append secondary sort order if required.
-    val sortOrder = if (order.order == "RELEVANCE") Seq(order) else Seq(order, RelevanceOrder)
+    val sortOrder = if (order.field == "RELEVANCE") Seq(order) else Seq(order, RelevanceOrder)
 
     val query = solrQuery(queryStr, offset, count, sortOrder, spellCheck = true)
     val response = solrServer.query(query)
@@ -50,8 +50,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     toSuggestions(response)
   }
 
-  // TODO: Should this be a list of orders?
-  private def solrQuery(queryStr: String, offset: Int, count: Int, orders: Seq[SortOrder], spellCheck: Boolean): SolrQuery = {
+  private def solrQuery(queryStr: String, offset: Int, count: Int, orders: Seq[SortOrder], spellCheck: Boolean) = {
     val query = new SolrQuery()
       .setFields(Fields: _*)
       .setQuery(queryStr)
@@ -68,7 +67,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   }
 
   private def toSolrSort(order: SortOrder) =
-    SortClause.create(orderToField(order.order), if (order.desc) SolrQuery.ORDER.desc else SolrQuery.ORDER.asc)
+    SortClause.create(orderToField(order.field), if (order.desc) SolrQuery.ORDER.desc else SolrQuery.ORDER.asc)
 
   private def orderToField(order: String): String = order match {
     case "RELEVANCE" => SCORE_FIELD

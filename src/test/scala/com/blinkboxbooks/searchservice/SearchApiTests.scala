@@ -23,7 +23,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   override val baseUrl = "service/search"
   override val searchTimeout = 5
   override def service: SearchService = mockService
-  
+
   var mockService: SearchService = _
 
   override implicit def actorRefFactory = system
@@ -148,22 +148,18 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     }
   }
 
-  test("search with invalid sort order") {
-    Get("/search/books?q=some+query&order=UNKNOWN") ~> route ~> check {
-      assert(status === BadRequest)
-    }
-    Get("/search/books?q=some+query&desc=INVALID") ~> route ~> check {
-      assert(status === BadRequest)
-    }
-  }
-
-  test("returns 500 when we fail to perform search on back-end") {
-    // Return failure from mock service.
-    val ex = new IOException("Test exception")
-    doReturn(Future(throw ex)).when(service).search(anyString, anyInt, anyInt, any[SortOrder])
-
-    Get("/search/books?q=some+query") ~> route ~> check {
-      assert(status === InternalServerError)
+  test("error returned when we fail to perform search on back-end") {
+    for (
+      (exception, excectedCode) <- Map(
+        new IOException("Test exception") -> InternalServerError,
+        new IndexOutOfBoundsException("Test exception") -> InternalServerError,
+        new IllegalArgumentException("Test exception") -> BadRequest)
+    ) {
+      // Return failure from mock service.
+      doReturn(Future(throw exception)).when(service).search(anyString, anyInt, anyInt, any[SortOrder])
+      Get("/search/books?q=some+query") ~> route ~> check {
+        assert(status === excectedCode)
+      }
     }
   }
 

@@ -58,7 +58,7 @@ trait BlinkboxService {
    * Custom directive for specifying sort order.
    */
   def ordered(defaultOrder: SortOrder = SortOrder("RELEVANCE", desc = true)) =
-    parameters('order ? defaultOrder.order, 'desc.as[Boolean] ? defaultOrder.desc).as(SortOrder)
+    parameters('order ? defaultOrder.field, 'desc.as[Boolean] ? defaultOrder.desc).as(SortOrder)
 
 }
 
@@ -96,7 +96,7 @@ object BlinkboxService {
   /**
    * Value class for sorting parameters.
    */
-  case class SortOrder(order: String, desc: Boolean)
+  case class SortOrder(field: String, desc: Boolean)
 
   /**
    * Class that allows custom strings to be used as type hints for classes.
