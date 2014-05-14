@@ -36,8 +36,7 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
   }
 
   test("search for free books") {
-    val expectedFreeBookQuery =
-      """name_field:(free)^10 OR content_field:(free) OR author_exact_field:("free")^25 OR title_exact_field:("free")^25"""
+    val expectedFreeBookQuery = "price:0"
     assert(queryString("free") === expectedFreeBookQuery)
     assert(queryString(" free  ") === expectedFreeBookQuery)
     assert(queryString("Free") === expectedFreeBookQuery)

@@ -90,8 +90,11 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   }
 
   private def toBookSearchResult(response: QueryResponse, suggestedQueries: Seq[String]) = {
-    val books = response.getResults.asScala.map(docToBook(includeType = false))
-    BookSearchResult(response.getResults.getNumFound(), suggestedQueries, books.toList)
+    val (count, books) = Option(response.getResults) match {
+      case Some(results) => (results.getNumFound, results.asScala.map(docToBook(includeType = false)).toList)
+      case None => (0L, Seq())
+    }
+    BookSearchResult(count, suggestedQueries, books)
   }
 
   private def replaceTerms(originalQuery: String, replacements: Map[String, SpellCheckResponse.Suggestion]): String = {

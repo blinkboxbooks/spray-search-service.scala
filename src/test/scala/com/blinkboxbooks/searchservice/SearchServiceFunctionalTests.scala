@@ -23,6 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FunSuite
 import org.scalatest.mock.MockitoSugar
 import scala.collection.JavaConverters._
+import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
 
 import SearchApi._
@@ -40,6 +41,8 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   override val searchTimeout = 5
   override def service: SearchService = searchService
   override implicit def actorRefFactory = system
+
+  val SeriesCount = 5
 
   /** Set up the embdedded Solr instance once for all tests. */
   override def beforeAll() {
@@ -83,7 +86,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     addBook("100000000502", "Walking for Brummies", Seq("John Smythe"), "All the best walks in the Midlands countryside", 6.0)
 
     // Add a series of very similar books.
-    for (vol <- 1 to 5) {
+    for (vol <- 1 to SeriesCount) {
       // Each book in the series become less popular yet more expensive.
       addBook(s"100000000100${vol}", s"Game of Drones Volume $vol",
         Seq("Martin George"), s"Book $vol in the epic series", price = 10.0 + vol, volume = Some((10 - vol) * 10000))
@@ -117,6 +120,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   test("simple search") {
     Get("/search/books?q=Builder") ~> route ~> check {
+      assert(status === OK)
       val result = searchResult
       assert(result.numberOfResults === 1, "Should just match the one book")
       assert(result.books.size === 1)
@@ -141,6 +145,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   test("search for book not in index") {
     Get("/search/books?q=ATermThatDoesntExistInTheIndex") ~> route ~> check {
+      assert(status === OK)
       val result = searchResult
       assert(result.numberOfResults === 0, "Shouldn't match any books")
       assert(result.books.size === 0)
@@ -219,6 +224,10 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     }
   }
 
+  test("suggestions when query has no matches") {
+    fail("TODO")
+  }
+
   test("suggestions when some books are missing fields") {
     fail("TODO")
   }
@@ -228,24 +237,27 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   //
 
   test("simple query for similar books") {
-    Get("/search/books/1234567890123/similar") ~> route ~> check {
+    // Get one book in a series and check that the top results
+    // are the other books in the series.
+    val inputIsbn = "1000000001001"
+    Get(s"/search/books/$inputIsbn/similar") ~> route ~> check {
+      assert(status === OK)
       val results = similarBooksResult
-
-      // Get one book in a series and check that the top results
-      // are the other books in the series.
-
-      fail("TODO|")
+      results.books.take(SeriesCount - 1).foreach(book => {
+        assert(book.authors === Seq("Martin George"), s"Book should be in same series, got: $book")
+        assert(book.id != inputIsbn)
+      })
     }
   }
 
   test("query for similar books with unknown ID") {
     // Make a request that results in no books coming back.
-    Get("/search/books/1234567890123/similar") ~> route ~> check {
+    Get("/search/books/9999999999999/similar") ~> route ~> check {
+      assert(status === OK)
       val results = similarBooksResult
+      assert(results.numberOfResults === 0)
 
       // The code for this need fixing as getResults in the Solr response returns null when nothing was found (ugh!).
-
-      fail("TODO|")
     }
   }
 
