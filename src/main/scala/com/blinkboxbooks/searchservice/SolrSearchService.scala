@@ -25,14 +25,18 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
   override def search(searchString: String, offset: Int, count: Int, order: SortOrder) = Future {
     val queryStr = queryProvider.queryString(searchString)
-    val query = solrQuery(queryStr, offset, count, order, spellCheck = true)
+
+    // Append secondary sort order if required.
+    val sortOrder = if (order.order == "RELEVANCE") Seq(order) else Seq(order, RelevanceOrder)
+
+    val query = solrQuery(queryStr, offset, count, sortOrder, spellCheck = true)
     val response = solrServer.query(query)
     toBookSearchResult(response, searchString)
   }
 
   override def findSimilar(id: String, offset: Int, count: Int): Future[BookSearchResult] = Future {
     val queryStr = ISBN_FIELD + ":" + id
-    val query = solrQuery(queryStr, offset, count, RelevanceOrder, spellCheck = false)
+    val query = solrQuery(queryStr, offset, count, Seq(RelevanceOrder), spellCheck = false)
       .setRequestHandler("/mlt") // TODO: Make req handler configurable
     val response = solrServer.query(query)
     toBookSearchResult(response, Seq())
@@ -40,27 +44,25 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
   override def suggestions(searchString: String, offset: Int, count: Int): Future[Seq[Suggestion]] = Future {
     val queryStr = queryProvider.suggestionsQueryString(searchString)
-    val query = solrQuery(queryStr, offset, count, RelevanceOrder, spellCheck = false)
+    val sortOrder = Seq(SortOrder("POPULARITY", true), SortOrder("RELEVANCE", true))
+    val query = solrQuery(queryStr, offset, count, sortOrder, spellCheck = false)
     val response = solrServer.query(query)
     toSuggestions(response)
   }
 
   // TODO: Should this be a list of orders?
-  private def solrQuery(queryStr: String, offset: Int, count: Int, order: SortOrder, spellCheck: Boolean): SolrQuery = {
+  private def solrQuery(queryStr: String, offset: Int, count: Int, orders: Seq[SortOrder], spellCheck: Boolean): SolrQuery = {
     val query = new SolrQuery()
       .setFields(Fields: _*)
       .setQuery(queryStr)
       .setStart(offset)
       .setRows(count)
-      .addSort(toSolrSort(order))
+
+    // Set sort orders on query.
+    orders.foreach(order => query.addSort(toSolrSort(order)))
 
     // Enable highlighting of results, so we know which terms matched.
     Fields.foreach(f => query.addHighlightField(f))
-
-    if (spellCheck) {
-      query.setParam(SpellingParams.SPELLCHECK_COLLATE, true)
-      query.setParam(SpellingParams.SPELLCHECK_EXTENDED_RESULTS, true)
-    }
 
     query
   }

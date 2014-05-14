@@ -23,6 +23,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   override val baseUrl = "service/search"
   override val searchTimeout = 5
   override def service: SearchService = mockService
+  
   var mockService: SearchService = _
 
   override implicit def actorRefFactory = system

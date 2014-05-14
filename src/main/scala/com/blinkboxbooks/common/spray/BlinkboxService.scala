@@ -109,7 +109,7 @@ object BlinkboxService {
   }
 
   /**
-   * JSON format that uses the names the type hint fiel as "type".
+   * JSON format that uses the names the type hint field as "type".
    */
   def typedBlinkboxFormat(hints: TypeHints = NoTypeHints): Formats = new DefaultFormats {
     override val typeHints: TypeHints = hints
