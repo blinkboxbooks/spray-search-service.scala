@@ -1,6 +1,7 @@
 package com.blinkboxbooks.searchservice
 
 import com.blinkboxbooks.common.spray.BlinkboxService.SortOrder
+import java.util.Collection
 import java.util.Collections
 import org.apache.solr.client.solrj.SolrServer
 import org.apache.solr.client.solrj.SolrQuery
@@ -9,11 +10,10 @@ import org.apache.solr.client.solrj.SolrQuery.SortClause
 import org.apache.solr.client.solrj.response.QueryResponse
 import org.apache.solr.client.solrj.response.SpellCheckResponse
 import org.apache.solr.common.SolrDocument
+import org.apache.solr.common.params.SpellingParams
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.apache.solr.common.params.SpellingParams
-import java.util.Collection
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
@@ -94,12 +94,13 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
   private def toBookSearchResult(response: QueryResponse, suggestedQueries: Seq[String]) = {
     val (count, books) = Option(response.getResults) match {
-      case Some(results) => (results.getNumFound, results.asScala.map(docToBook(includeType = false)).toList)
+      case Some(results) => (results.getNumFound, results.asScala.map(docToBook(includeType = false)).toSeq)
       case None => (0L, Seq())
     }
     BookSearchResult(count, suggestedQueries, books)
   }
 
+  /** Collate suggested alternative spellings for terms into a single new search query. */
   private def replaceTerms(originalQuery: String, replacements: Map[String, SpellCheckResponse.Suggestion]): String = {
     val terms = originalQuery.split("\\s")
     val updatedTerms = terms.map(originalTerm => replacements.get(originalTerm) match {
@@ -136,7 +137,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
     response.getResults.asScala
       .filter(doc => !hasMissingBookFields(doc))
       .flatMap(docToSuggestions)
-      .toList
+      .toSeq
 
   private def hasMissingBookFields(doc: SolrDocument) =
     !Option(doc.getFieldValues(AUTHOR_FIELD)).isDefined ||

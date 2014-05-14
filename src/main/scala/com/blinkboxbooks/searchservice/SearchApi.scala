@@ -7,15 +7,12 @@ import com.blinkboxbooks.common.Utils._
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 import scala.concurrent.{ Future, ExecutionContext }
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import spray.httpx.Json4sJacksonSupport
-import spray.routing.HttpService
-import spray.routing.HttpServiceActor
-import spray.routing.Route
+import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.StatusCodes._
+import spray.httpx.Json4sJacksonSupport
+import spray.routing.{ ExceptionHandler, HttpService, HttpServiceActor, Route }
 import spray.util.LoggingContext
-import spray.routing.ExceptionHandler
 
 /**
  * API for search service, expressed as Spray routes.

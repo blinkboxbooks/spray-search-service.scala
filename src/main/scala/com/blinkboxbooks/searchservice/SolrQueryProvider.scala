@@ -60,7 +60,7 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
 object StandardSolrQueryProvider {
 
   private val freeBooksQueries = Seq("free")
-  private val nameFieldBoost = 10
+  private val nameFieldBoost = 10 // TODO: Make these configurable.
   private val contentFieldBoost = 1
   private val authorExactBoost = 25
   private val titleExactBoost = 25
