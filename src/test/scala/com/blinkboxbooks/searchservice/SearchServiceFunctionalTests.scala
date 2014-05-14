@@ -128,9 +128,14 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
   test("search by descending vs. ascending order") {
-    // set desc=false in the query, check that the results are the same as 
-    // for desc=true.
-    fail("TODO")
+    Get("/search/books?q=Builder&desc=false") ~> route ~> check {
+      val ascendingResult = searchResult
+      Get("/search/books?q=Builder&desc=false") ~> route ~> check {
+        val descendingResult = searchResult
+        assert(ascendingResult.numberOfResults == descendingResult.numberOfResults, "Should get same number of results")
+        assert(ascendingResult.books == descendingResult.books.reverse, "Results should be identical but in reverse order")
+      }
+    }
   }
 
   test("search for book not in index") {
