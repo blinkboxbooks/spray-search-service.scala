@@ -254,13 +254,13 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
   test("Spelling suggestion for search with multiple terms, one of which is misspelled") {
-    Get("/search/books?q=game+of+prones") ~> route ~> check {
+    Get("/search/books?q=game+of+dronxs") ~> route ~> check {
       assert(searchResult.suggestions === List("game of drones"))
     }
   }
 
   test("Spelling suggestion for search with multiple terms, several of which are misspelled") {
-    Get("/search/books?q=grame+of+prones") ~> route ~> check {
+    Get("/search/books?q=grame+of+dronxs") ~> route ~> check {
       assert(searchResult.suggestions === List("game of drones"))
     }
   }

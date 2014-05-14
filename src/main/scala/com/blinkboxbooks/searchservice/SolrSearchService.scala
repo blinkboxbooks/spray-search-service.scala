@@ -78,19 +78,29 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   }
 
   private def toBookSearchResult(response: QueryResponse, searchString: Option[String] = None) = {
+
     val books = response.getResults.asScala.map(docToBook(includeType = false))
 
-            // TODO! Ensure embedded Solr is using index as dictionary.
-//    val suggestedQueries = response.getSpellCheckResponse.getCollatedResults().asScala
-//      .sortBy(_.getNumberOfHits * -1)
-//      .map(_.getCollationQueryString)
-//
-    val suggestedQueries = Seq()
+    val suggestedQueries = searchString match {
+      case None => Seq()
+      case Some(query) =>
+        val topReplacements = response.getSpellCheckResponse.getSuggestionMap.asScala.toMap
+        //  .map { case (token, alternatives) => (token, alternatives.getAlternatives.asScala.toList.take(1)) }
+        val updatedQuery = replaceTerms(query, topReplacements)
+        if (updatedQuery != query) Seq(replaceTerms(query, topReplacements)) else Seq()
+    }
 
     BookSearchResult(response.getResults.getNumFound(), suggestedQueries, books.toList)
   }
 
-  private def replaceTerms(originalQuery: String, replacements: Map[String, String]): String = ???
+  private def replaceTerms(originalQuery: String, replacements: Map[String, SpellCheckResponse.Suggestion]): String = {
+    val terms = originalQuery.split("\\s")
+    val updatedTerms = terms.map(originalTerm => replacements.get(originalTerm) match {
+      case Some(suggestion) => suggestion.getAlternatives().get(0)
+      case _ => originalTerm
+    })
+    updatedTerms.mkString(" ")
+  }
 
   private def docToBook(includeType: Boolean)(doc: SolrDocument): Book =
     Book(doc.getFieldValue(ISBN_FIELD).toString,
@@ -127,6 +137,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
   /** Helper to make SolrJ Java API a bit more helpful, to stop it from returning nulls. */
   // TODO: Make implicit method on SolrDocument!
+  // ...also, make a corresponding getFieldValue method that converts non-collection values to strings?
   private def getFields(doc: SolrDocument, fieldName: String): Array[AnyRef] =
     Option(doc.getFieldValues(fieldName)).getOrElse(Collections.emptyList).toArray
 
