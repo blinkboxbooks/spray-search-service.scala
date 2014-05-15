@@ -1,6 +1,7 @@
 package com.blinkboxbooks.searchservice
 
 import com.blinkboxbooks.common.spray.BlinkboxService._
+import java.net.URLEncoder
 import java.nio.file.Files
 import java.io.InputStream
 import java.io.File
@@ -67,6 +68,8 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     solrServer = new EmbeddedSolrServer(cores, "books")
 
     addBooks()
+    
+    solrServer.commit()
   }
 
   override def afterAll() {
@@ -110,8 +113,6 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
     // Add books with no price data.
     addBook("100000000701", Some("Superman - my role in his downfall"), Seq("Lex Luthor"), "A documentary", None, None)
-
-    solrServer.commit()
   }
 
   //
@@ -191,6 +192,26 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
       val result = searchResult
       assert(result.numberOfResults === 1, "Should match the specific 0 price")
       assert(result.books.size === 1)
+    }
+  }
+
+  test("search using non-ASCII characters") {
+    // Check that accented characters are treated as un-accented, in book, author and title fields.
+    addBook("990000000101", "Smiley's People", Seq("John le Carré"), "The classic spy novel", 6.0)
+    addBook("990000000102", "John le Carré - the Biography", Seq("Anonymous"), "The story of the spy novelist", 6.0)
+    addBook("990000000103", "Another Spy Novel", Seq("S. Omeone"), "'Really awesome' - John le Carré", 6.0)
+    solrServer.commit()
+
+    val queryString = URLEncoder.encode("Carré", "UTF-8")
+    val req = s"/search/books?q=$queryString"
+    Get(s"/search/books?q=$queryString") ~> route ~> check {
+      val resultForAccented = searchResult
+      assert(resultForAccented.id === "Carré", "Should use the original query as ID in result")
+      Get("/search/books?q=Carre") ~> route ~> check {
+        val resultForUnaccented = searchResult
+        assert(resultForAccented.books === resultForUnaccented.books, "Should treat accented characters as their ASCII equivalents")
+        assert(resultForAccented.books.size === 3, "Should find 3 books")
+      }
     }
   }
 
