@@ -68,7 +68,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     solrServer = new EmbeddedSolrServer(cores, "books")
 
     addBooks()
-    
+
     solrServer.commit()
   }
 
@@ -207,12 +207,30 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     Get(s"/search/books?q=$queryString") ~> route ~> check {
       val resultForAccented = searchResult
       assert(resultForAccented.id === "Carré", "Should use the original query as ID in result")
+
       Get("/search/books?q=Carre") ~> route ~> check {
         val resultForUnaccented = searchResult
         assert(resultForAccented.books === resultForUnaccented.books, "Should treat accented characters as their ASCII equivalents")
         assert(resultForAccented.books.size === 3, "Should find 3 books")
       }
     }
+  }
+
+  test("synonym substitution") {
+    addBook("990000000101", "The Color Purple", Seq("Alice Walker"), "Gritty realism", 6.0)
+    addBook("990000000102", "The Colour of Memory", Seq("Geoff Dyer"), "80s Nostalgia", 6.0)
+    solrServer.commit()
+
+    Get(s"/search/books?q=color") ~> route ~> check {
+      val resultForUsSpelling = searchResult
+
+      Get("/search/books?q=colour") ~> route ~> check {
+        val resultForUkSpelling = searchResult
+        assert(resultForUkSpelling.books === resultForUsSpelling.books, "Should do synonym substitution, hence match both spellings")
+        assert(resultForUkSpelling.books.size === 2, "Should find both books")
+      }
+    }
+
   }
 
   //
