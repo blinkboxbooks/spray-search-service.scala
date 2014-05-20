@@ -233,6 +233,23 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   }
 
+  test("the Ender's Game fix") {
+    // See CP-771.
+    addBook("990000000101", "Ender's Game", Seq("Orson Scott Card"), "", 6.0)
+    solrServer.commit()
+
+    Get(s"/search/books?q=enders") ~> route ~> check {
+      val resultForWrongSpelling = searchResult
+
+      Get("/search/books?q=ender's") ~> route ~> check {
+        val resultForCorrectSpelling = searchResult
+        assert(resultForWrongSpelling.books === resultForCorrectSpelling.books, "Should treat word that ends in as as if it might have been written with an apostrophe")
+        assert(resultForWrongSpelling.books.size === 1, "Should find only the one book")
+      }
+    }
+
+  }
+
   //
   // Suggestions.
   //
