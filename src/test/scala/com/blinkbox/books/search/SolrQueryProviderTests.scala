@@ -1,4 +1,4 @@
-package com.blinkboxbooks.searchservice
+package com.blinkbox.books.search
 
 import org.junit.runner.RunWith
 import org.mockito.Mockito._

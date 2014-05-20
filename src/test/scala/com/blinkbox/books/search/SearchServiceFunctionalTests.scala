@@ -1,4 +1,4 @@
-package com.blinkboxbooks.searchservice
+package com.blinkbox.books.search
 
 import java.net.URLEncoder
 import java.nio.file.Files

@@ -1,4 +1,4 @@
-package com.blinkboxbooks.searchservice
+package com.blinkbox.books.search
 
 import scala.concurrent.Future
 

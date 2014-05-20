@@ -1,10 +1,10 @@
-package com.blinkboxbooks.searchservice
+package com.blinkbox.books.search
 
 import akka.util.Timeout
 import com.blinkbox.books.spray.Directives
 import com.blinkbox.books.spray.Paging._
 import com.blinkbox.books.spray.JsonFormats._
-import com.blinkboxbooks.searchservice.SearchService._
+import com.blinkbox.books.search.SearchService._
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 import scala.concurrent.{ Future, ExecutionContext }

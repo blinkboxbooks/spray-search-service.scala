@@ -1,9 +1,9 @@
-package com.blinkboxbooks.searchservice
+package com.blinkbox.books.search
 
 import java.util.Collection
 import java.util.Collections
 import org.apache.solr.common.SolrDocument
-import scala.language.implicitConversions
+import scala.Array.canBuildFrom
 
 /**
  * Generally useful helpers for dealing with Solr/SolrJ.

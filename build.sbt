@@ -1,6 +1,6 @@
 name := "search-service-spray"
 
-organization := "com.blinkboxbooks"
+organization := "com.blinkbox.books"
 
 version := scala.io.Source.fromFile("VERSION").mkString.trim
 

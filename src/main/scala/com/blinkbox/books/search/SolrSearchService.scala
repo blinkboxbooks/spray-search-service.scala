@@ -1,18 +1,30 @@
-package com.blinkboxbooks.searchservice
-
-import java.util.Collection
-import java.util.Collections
+package com.blinkbox.books.search
 import org.apache.solr.client.solrj.SolrServer
 import org.apache.solr.client.solrj.SolrQuery
-import org.apache.solr.client.solrj.SolrQuery.ORDER
 import org.apache.solr.client.solrj.SolrQuery.SortClause
 import org.apache.solr.client.solrj.response.QueryResponse
 import org.apache.solr.client.solrj.response.SpellCheckResponse
 import org.apache.solr.common.SolrDocument
-import org.apache.solr.common.params.SpellingParams
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+//import SolrConstants.AUTHOR_FIELD
+//import SolrConstants.AUTHOR_GUID_FIELD
+//import SolrConstants.AUTHOR_SORT_FIELD
+//import SolrConstants.ISBN_FIELD
+//import SolrConstants.PUBLICATION_DATE_FIELD
+//import SolrConstants.SCORE_FIELD
+//import SolrConstants.TITLE_FIELD
+//import SolrConstants.VOLUME_FIELD
+//import SolrUtils.solrDoc2Wrapper
+//import com.blinkbox.books.search.Book
+//import com.blinkbox.books.search.BookSearchResult
+//import com.blinkbox.books.search.BookSuggestion
+//import com.blinkbox.books.search.SearchService
+//import com.blinkbox.books.search.SortOrder
+//import com.blinkbox.books.search.Suggestion
+//import scala.Array.canBuildFrom
+//import SolrConstants.PRICE_FIELD
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
@@ -147,18 +159,18 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
 object SolrConstants {
 
   // Field names.
-  private[searchservice] val ISBN_FIELD = "isbn"
-  private[searchservice] val TITLE_FIELD = "title"
-  private[searchservice] val SCORE_FIELD = "score"
-  private[searchservice] val NAME_FIELD = "name_field"
-  private[searchservice] val CONTENT_FIELD = "content_field"
-  private[searchservice] val PUBLICATION_DATE_FIELD = "publication_date"
-  private[searchservice] val VOLUME_FIELD = "volume"
-  private[searchservice] val PRICE_FIELD = "price"
-  private[searchservice] val AUTHOR_FIELD = "author"
-  private[searchservice] val AUTHOR_EXACT_FIELD = "author_exact_field"
-  private[searchservice] val AUTHOR_GUID_FIELD = "author_guid"
-  private[searchservice] val AUTHOR_SORT_FIELD = "author_sort"
-  private[searchservice] val TITLE_EXACT_FIELD = "title_exact_field"
+  private[search] val ISBN_FIELD = "isbn"
+  private[search] val TITLE_FIELD = "title"
+  private[search] val SCORE_FIELD = "score"
+  private[search] val NAME_FIELD = "name_field"
+  private[search] val CONTENT_FIELD = "content_field"
+  private[search] val PUBLICATION_DATE_FIELD = "publication_date"
+  private[search] val VOLUME_FIELD = "volume"
+  private[search] val PRICE_FIELD = "price"
+  private[search] val AUTHOR_FIELD = "author"
+  private[search] val AUTHOR_EXACT_FIELD = "author_exact_field"
+  private[search] val AUTHOR_GUID_FIELD = "author_guid"
+  private[search] val AUTHOR_SORT_FIELD = "author_sort"
+  private[search] val TITLE_EXACT_FIELD = "title_exact_field"
 
 }

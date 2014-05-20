@@ -1,11 +1,11 @@
-package com.blinkboxbooks.searchservice;
+package com.blinkbox.books.search;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.blinkboxbooks.searchservice.QueryBuilder.Operator;
+import com.blinkbox.books.search.QueryBuilder.Operator;
 
 public class QueryBuilderTest {
     private QueryBuilder builder;
