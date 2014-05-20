@@ -133,6 +133,10 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     }
   }
 
+  test("searches with different capitalisation and whitespace") {
+    checkSameSearchResults(1, "Bob Builder", "bob  builder ", "  bob BuIlDer ")
+  }
+
   test("search by descending vs. ascending order") {
     Get("/search/books?q=Builder&desc=false") ~> route ~> check {
       val ascendingResult = searchResult
@@ -202,18 +206,8 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     addBook("990000000103", "Another Spy Novel", Seq("S. Omeone"), "'Really awesome' - John le Carré", 6.0)
     solrServer.commit()
 
-    val queryString = URLEncoder.encode("Carré", "UTF-8")
-    val req = s"/search/books?q=$queryString"
-    Get(s"/search/books?q=$queryString") ~> route ~> check {
-      val resultForAccented = searchResult
-      assert(resultForAccented.id === "Carré", "Should use the original query as ID in result")
-
-      Get("/search/books?q=Carre") ~> route ~> check {
-        val resultForUnaccented = searchResult
-        assert(resultForAccented.books === resultForUnaccented.books, "Should treat accented characters as their ASCII equivalents")
-        assert(resultForAccented.books.size === 3, "Should find 3 books")
-      }
-    }
+    // Should do synonym substitution, hence match both spellings.
+    checkSameSearchResults(3, "Carré", "Carre")
   }
 
   test("synonym substitution") {
@@ -221,16 +215,8 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     addBook("990000000102", "The Colour of Memory", Seq("Geoff Dyer"), "80s Nostalgia", 6.0)
     solrServer.commit()
 
-    Get(s"/search/books?q=color") ~> route ~> check {
-      val resultForUsSpelling = searchResult
-
-      Get("/search/books?q=colour") ~> route ~> check {
-        val resultForUkSpelling = searchResult
-        assert(resultForUkSpelling.books === resultForUsSpelling.books, "Should do synonym substitution, hence match both spellings")
-        assert(resultForUkSpelling.books.size === 2, "Should find both books")
-      }
-    }
-
+    // Should do synonym substitution, hence match both spellings.
+    checkSameSearchResults(2, "color", "colour")
   }
 
   test("the Ender's Game fix") {
@@ -238,16 +224,17 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     addBook("990000000101", "Ender's Game", Seq("Orson Scott Card"), "", 6.0)
     solrServer.commit()
 
-    Get(s"/search/books?q=enders") ~> route ~> check {
-      val resultForWrongSpelling = searchResult
+    // Should cater for people who don't know how to use apostrophes.
+    checkSameSearchResults(1, "enders", "ender's")
+  }
 
-      Get("/search/books?q=ender's") ~> route ~> check {
-        val resultForCorrectSpelling = searchResult
-        assert(resultForWrongSpelling.books === resultForCorrectSpelling.books, "Should treat word that ends in as as if it might have been written with an apostrophe")
-        assert(resultForWrongSpelling.books.size === 1, "Should find only the one book")
-      }
-    }
+  private def checkSameSearchResults[T](expectedNumber: Int, requests: String*) {
+    val requestUrls = requests.map(request => "/search/books?q=" + URLEncoder.encode(request, "UTF-8"))
+    val results = requestUrls.map(requestUrl => Get(requestUrl) ~> route ~> check { searchResult.books })
+    val distinctResults = results.toSet
 
+    assert(results(0).size === expectedNumber, s"Should get $expectedNumber results for search, got ${results.size}")
+    assert(distinctResults.size === 1, s"Results for searches '$requests' 'should all be the same, got: $distinctResults")
   }
 
   //
