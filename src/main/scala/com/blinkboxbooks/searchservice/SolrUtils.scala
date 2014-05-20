@@ -3,6 +3,7 @@ package com.blinkboxbooks.searchservice
 import java.util.Collection
 import java.util.Collections
 import org.apache.solr.common.SolrDocument
+import scala.language.implicitConversions
 
 /**
  * Generally useful helpers for dealing with Solr/SolrJ.
@@ -30,6 +31,9 @@ object SolrUtils {
       Option(doc.getFieldValues(fieldName)).getOrElse(Collections.emptyList).toArray.map(_.toString)
   }
 
+  /**
+   * Implicit conversion from SolrDocument to its Scala wrapper type.
+   */
   implicit def solrDoc2Wrapper(doc: SolrDocument): SolrDocWrapper = new SolrDocWrapper(doc)
 
 }

@@ -1,6 +1,5 @@
 package com.blinkboxbooks.searchservice
 
-import com.blinkboxbooks.common.spray.BlinkboxService._
 import java.net.URLEncoder
 import java.nio.file.Files
 import java.io.InputStream

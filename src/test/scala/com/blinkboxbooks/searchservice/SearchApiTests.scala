@@ -14,7 +14,7 @@ import org.scalatest.junit.JUnitRunner
 import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
 
-import com.blinkboxbooks.common.spray.BlinkboxService._
+import com.blinkbox.books.spray.Paging._
 import SearchApi._
 
 @RunWith(classOf[JUnitRunner])
@@ -54,7 +54,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
   test("simple search for book") {
     Get("/search/books?q=some+words") ~> route ~> check {
-      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json")
+      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8")
       assert(status === OK)
 
       // Check performed query, including default parameters.
@@ -103,7 +103,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       .search(anyString, Matchers.eq(offset), Matchers.eq(count), any[SortOrder])
 
     Get(s"/search/books?q=some+words&count=$count&order=POPULARITY&desc=false&offset=$offset") ~> route ~> check {
-      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json")
+      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8")
       assert(status === OK)
 
       // Check request parameters were picked up correctly.
@@ -166,7 +166,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
   test("simple query for suggestions") {
     Get("/search/suggestions?q=foo") ~> route ~> check {
       assert(status === OK)
-      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json")
+      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8")
 
       val result = parse(body.data.asString).extract[SuggestionsResult]
       assert(result.items === suggestions, "Got: " + body.data.asString)

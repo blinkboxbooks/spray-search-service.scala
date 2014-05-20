@@ -1,9 +1,10 @@
 package com.blinkboxbooks.searchservice
 
 import akka.util.Timeout
-import com.blinkboxbooks.common.spray.BlinkboxService
-import com.blinkboxbooks.common.spray.BlinkboxService._
-import com.blinkboxbooks.common.Utils._
+import com.blinkbox.books.spray.Directives
+import com.blinkbox.books.spray.Paging._
+import com.blinkbox.books.spray.JsonFormats._
+import com.blinkboxbooks.searchservice.SearchService._
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 import scala.concurrent.{ Future, ExecutionContext }
@@ -17,7 +18,7 @@ import spray.util.LoggingContext
 /**
  * API for search service, expressed as Spray routes.
  */
-trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxService {
+trait SearchApi extends HttpService with Json4sJacksonSupport with Directives {
 
   import SearchApi._
 
@@ -26,22 +27,19 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxServi
   val searchTimeout: Int
   def service: SearchService
 
-  implicit val timeout = Timeout(searchTimeout seconds)
-  implicit def json4sJacksonFormats = typedBlinkboxFormat(EntityTypeHints).withBigDecimal
+  implicit val timeout = Timeout(searchTimeout.seconds)
+  implicit def json4sJacksonFormats = blinkboxFormat(EntityTypeHints).withBigDecimal
 
   implicit def myExceptionHandler(implicit log: LoggingContext) =
     ExceptionHandler {
       case e: IllegalArgumentException =>
-        requestUri { uri =>
-          log.warning("Request to {} could not be handled normally", uri)
-          complete(BadRequest, s"Invalid request: ${e.getMessage}")
-        }
+        requestUri { uri => complete(BadRequest, s"Invalid request: ${e.getMessage}") }
     }
 
   /**
    * The overall route for the service.
    */
-  def route = standardResponseHeaders {
+  def route = version1ResponseHeaders {
     get {
       pathPrefix("search") {
         searchForBooks ~ similarBooks ~ searchSuggestions
@@ -60,7 +58,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxServi
             val result = service.search(query, page.offset, page.count, sortOrder)
             onSuccess(result) { result =>
               complete(QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
-                links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books")))
+                links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books")))
             }
           }
         }
@@ -76,7 +74,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxServi
         val result = service.findSimilar(id, page.offset, page.count)
         onSuccess(result) { result =>
           complete(SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
-            links(result.numberOfResults, page.offset, page.count, s"$baseUrl/books/$id/similar")))
+            links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books/$id/similar")))
         }
       }
     }
@@ -96,6 +94,12 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with BlinkboxServi
         }
       }
     }
+
+  /**
+   * Custom directive for specifying sort order.
+   */
+  def ordered(defaultOrder: SortOrder = SortOrder("RELEVANCE", desc = true)) =
+    parameters('order ? defaultOrder.field, 'desc.as[Boolean] ? defaultOrder.desc).as(SortOrder)
 
 }
 

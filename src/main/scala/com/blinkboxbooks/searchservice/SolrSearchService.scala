@@ -1,6 +1,5 @@
 package com.blinkboxbooks.searchservice
 
-import com.blinkboxbooks.common.spray.BlinkboxService.SortOrder
 import java.util.Collection
 import java.util.Collections
 import org.apache.solr.client.solrj.SolrServer

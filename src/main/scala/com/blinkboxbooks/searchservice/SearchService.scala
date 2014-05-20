@@ -1,7 +1,6 @@
 package com.blinkboxbooks.searchservice
 
 import scala.concurrent.Future
-import com.blinkboxbooks.common.spray.BlinkboxService._
 
 /**
  * Domain classes for search results.
@@ -26,7 +25,7 @@ case class Book(
   authors: Seq[String])
   extends Entity
 
-trait Suggestion extends Entity
+sealed trait Suggestion extends Entity
 
 case class AuthorSuggestion(
   id: String,
@@ -43,6 +42,8 @@ case class BookSearchResult(
   numberOfResults: Long,
   suggestions: Seq[String],
   books: Seq[Book])
+
+case class SortOrder(field: String, desc: Boolean)
 
 /**
  * Interface containing the business logic of performing searches.
@@ -66,3 +67,9 @@ trait SearchService {
 
 }
 
+object SearchService {
+
+  /** Matcher for ISBN. */
+  val Isbn = """^(\d{13})$""".r
+
+}

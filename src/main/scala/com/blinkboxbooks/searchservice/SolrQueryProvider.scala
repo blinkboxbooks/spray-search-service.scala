@@ -1,6 +1,6 @@
 package com.blinkboxbooks.searchservice
 
-import com.blinkboxbooks.common.Utils.Isbn
+import com.blinkboxbooks.searchservice.SearchService.Isbn
 import com.google.common.base.CharMatcher
 import org.apache.commons.lang.StringUtils
 import scala.util.{ Try, Success, Failure }

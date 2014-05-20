@@ -1,13 +1,20 @@
 package com.blinkboxbooks.searchservice
 
-import akka.actor.Props
+import akka.actor.{ Actor, Props, ActorSystem }
 import akka.io.IO
-import spray.can.Http
-import spray.routing._
-import com.blinkboxbooks.common.spray.Core
-import com.blinkboxbooks.common.spray.BootedCore
 import org.apache.solr.client.solrj.impl.HttpSolrServer
 import org.apache.solr.client.solrj.impl.XMLResponseParser
+import spray.can.Http
+import spray.routing._
+
+trait Core {
+  implicit def system: ActorSystem
+}
+
+trait BootedCore extends Core {
+  implicit lazy val system = ActorSystem("akka-spray")
+  sys.addShutdownHook(system.shutdown())
+}
 
 /**
  * A trait that contains the bulk of the start-up code for the service.
