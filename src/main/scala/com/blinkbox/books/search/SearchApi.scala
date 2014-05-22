@@ -1,24 +1,27 @@
 package com.blinkbox.books.search
 
 import akka.util.Timeout
+import com.blinkbox.books.search.SearchService._
+import com.blinkbox.books.spray.JsonFormats._
 import com.blinkbox.books.spray.Directives
 import com.blinkbox.books.spray.Paging._
-import com.blinkbox.books.spray.JsonFormats._
-import com.blinkbox.books.search.SearchService._
-import org.json4s.NoTypeHints
+import com.blinkbox.books.spray.Version1JsonSupport
 import org.json4s.jackson.Serialization
-import scala.concurrent.{ Future, ExecutionContext }
+import org.json4s.NoTypeHints
+import org.json4s.Serialization
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.StatusCodes._
 import spray.httpx.Json4sJacksonSupport
-import spray.routing.{ ExceptionHandler, HttpService, HttpServiceActor, Route }
+import spray.httpx.marshalling.Marshaller
+import spray.routing.{ ExceptionHandler, HttpService, Route }
 import spray.util.LoggingContext
 
 /**
  * API for search service, expressed as Spray routes.
  */
-trait SearchApi extends HttpService with Json4sJacksonSupport with Directives {
+trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonSupport with Directives {
 
   import SearchApi._
 
@@ -28,7 +31,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Directives {
   def service: SearchService
 
   implicit val timeout = Timeout(searchTimeout.seconds)
-  implicit def json4sJacksonFormats = blinkboxFormat(EntityTypeHints).withBigDecimal
+  implicit def json4sJacksonFormats = blinkboxFormat(EntityTypeHints)
 
   implicit def myExceptionHandler(implicit log: LoggingContext) =
     ExceptionHandler {
@@ -36,15 +39,19 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Directives {
         requestUri { uri => complete(BadRequest, s"Invalid request: ${e.getMessage}") }
     }
 
+  implicit override def version1JsonMarshaller[T <: AnyRef] = {
+    implicit val formats = blinkboxFormat(EntityTypeHints)
+    Marshaller.delegate[T, String](`application/vnd.blinkboxbooks.data.v1+json`)(Serialization.write(_))
+  }
+  
   /**
    * The overall route for the service.
    */
-  def route = version1ResponseHeaders {
-    get {
-      pathPrefix("search") {
-        searchForBooks ~ similarBooks ~ searchSuggestions
-      }
+  def route = get {
+    pathPrefix("search") {
+      searchForBooks ~ similarBooks ~ searchSuggestions
     }
+
   }
 
   /**
@@ -87,7 +94,7 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Directives {
       paged(defaultCount = 10) { page =>
         parameters('q) { query =>
           val result = service.suggestions(query, page.offset, page.count)
-          implicit val typedJacksonFormats = Serialization.formats(NoTypeHints).withBigDecimal
+          implicit val typedJacksonFormats = blinkboxFormat()
           onSuccess(result) { suggestions =>
             complete(SuggestionsResult(suggestions))
           }

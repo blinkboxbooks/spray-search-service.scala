@@ -6,6 +6,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrServer
 import org.apache.solr.client.solrj.impl.XMLResponseParser
 import spray.can.Http
 import spray.routing._
+import com.typesafe.scalalogging.slf4j.Logging
 
 trait Core {
   implicit def system: ActorSystem
@@ -19,8 +20,10 @@ trait BootedCore extends Core {
 /**
  * A trait that contains the bulk of the start-up code for the service.
  */
-trait WebApi extends RouteConcatenation {
+trait WebApi extends RouteConcatenation with Logging {
   this: Core =>
+
+  logger.info("Starting service")
 
   val solrServer = new HttpSolrServer("http://localhost:8983/solr/books") // TODO: get from config.
   //    val solrServer = new HttpSolrServer("http://solr.mobcastdev.com/solr/books") // TODO: get from config.
@@ -31,6 +34,8 @@ trait WebApi extends RouteConcatenation {
   val baseUrl = "search" // TODO: Get from config.
   val searchTimeout = 5 // TODO: Get from config.
   val service = system.actorOf(Props(new SearchWebService(model, baseUrl, searchTimeout)), "search-service")
+
+  logger.info("Started service")
 }
 
 /**
