@@ -14,7 +14,7 @@ object SolrUtils {
    * Add some convenient helper methods on SolrDocument to cope with its annoying
    * API that returns Collections that may be null, and untyped objects.
    */
-  class SolrDocWrapper(doc: SolrDocument) {
+  implicit class SolrDocWrapper(doc: SolrDocument) {
 
     /**
      *  @return the value of the given field if only one exists, or the first one if several values exist.
@@ -27,13 +27,15 @@ object SolrUtils {
         case None => throw new IllegalArgumentException(s"No value found for field '$fieldName'")
       }
 
+    /**
+     * @return an array of all string values of the given field name.
+     * Will return an empty array if the field has no values, never returns null.
+     */
     def getAllFieldValues(fieldName: String): Array[String] =
-      Option(doc.getFieldValues(fieldName)).getOrElse(Collections.emptyList).toArray.map(_.toString)
+      Option(doc.getFieldValues(fieldName))
+        .getOrElse(Collections.emptyList)
+        .toArray
+        .map(_.toString)
   }
-
-  /**
-   * Implicit conversion from SolrDocument to its Scala wrapper type.
-   */
-  implicit def solrDoc2Wrapper(doc: SolrDocument): SolrDocWrapper = new SolrDocWrapper(doc)
 
 }
