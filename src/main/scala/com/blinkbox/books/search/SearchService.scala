@@ -2,12 +2,9 @@ package com.blinkbox.books.search
 
 import scala.concurrent.Future
 
-/**
- * Domain classes for search results.
- *
- * Note that these currently include the 'type' field returned by the web API. This field should be removed
- * from these classes and added in the web layer at some point.
- */
+//
+// Domain classes for search results.
+//
 
 sealed trait Entity {
   val id: String
