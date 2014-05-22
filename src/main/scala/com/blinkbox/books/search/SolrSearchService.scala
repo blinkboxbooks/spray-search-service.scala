@@ -1,4 +1,5 @@
 package com.blinkbox.books.search
+
 import org.apache.solr.client.solrj.SolrServer
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.SolrQuery.SortClause
@@ -8,23 +9,6 @@ import org.apache.solr.common.SolrDocument
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-//import SolrConstants.AUTHOR_FIELD
-//import SolrConstants.AUTHOR_GUID_FIELD
-//import SolrConstants.AUTHOR_SORT_FIELD
-//import SolrConstants.ISBN_FIELD
-//import SolrConstants.PUBLICATION_DATE_FIELD
-//import SolrConstants.SCORE_FIELD
-//import SolrConstants.TITLE_FIELD
-//import SolrConstants.VOLUME_FIELD
-//import SolrUtils.solrDoc2Wrapper
-//import com.blinkbox.books.search.Book
-//import com.blinkbox.books.search.BookSearchResult
-//import com.blinkbox.books.search.BookSuggestion
-//import com.blinkbox.books.search.SearchService
-//import com.blinkbox.books.search.SortOrder
-//import com.blinkbox.books.search.Suggestion
-//import scala.Array.canBuildFrom
-//import SolrConstants.PRICE_FIELD
 
 class SolrSearchService(solrServer: SolrServer) extends SearchService {
 
