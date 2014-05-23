@@ -23,6 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FunSuite
 import org.scalatest.mock.MockitoSugar
 import scala.collection.JavaConverters._
+import scala.concurrent.duration._
 import spray.http.StatusCodes._
 import spray.testkit.ScalatestRouteTest
 
@@ -39,7 +40,10 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   override val baseUrl = "service/search"
   override val searchTimeout = 5
-  override def service: SearchService = searchService
+  override def service = searchService
+  override val corsOrigin = "*"
+  override val searchMaxAge = 100.seconds
+  override val autoCompleteMaxAge = 200.seconds
   override implicit def actorRefFactory = system
 
   val SeriesCount = 5

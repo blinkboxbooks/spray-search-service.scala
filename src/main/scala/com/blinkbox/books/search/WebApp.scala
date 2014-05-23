@@ -4,6 +4,7 @@ import akka.actor.{ Actor, Props, ActorSystem }
 import akka.io.IO
 import org.apache.solr.client.solrj.impl.HttpSolrServer
 import org.apache.solr.client.solrj.impl.XMLResponseParser
+import scala.concurrent.duration._
 import spray.can.Http
 import spray.routing._
 import com.typesafe.scalalogging.slf4j.Logging
@@ -46,15 +47,15 @@ trait WebApi extends RouteConcatenation with Logging {
   val contentBoost = config.getDouble("search.content.boost") // -- "" --
   val exactAuthorBoost = config.getDouble("search.exact.author.boost") // -- "" --
   val exactTitleBoost = config.getDouble("search.exact.title.boost") // -- "" --
-  
+
   val model = new SolrSearchService(solrServer)
 
   val baseUrl = config.getString("search.path")
   val searchTimeout = config.getInt("search.timeout")
-  val corsHeaders = config.getString("http.cors.origin") // TODO: Pass into web service.
-  val searchMaxAge = config.getInt("search.maxAgeSeconds")
-  val autoCompleteMaxAge = config.getInt("autocomplete.maxAgeSeconds")
-  val service = system.actorOf(Props(new SearchWebService(model, baseUrl, searchTimeout)), "search-service")
+  val corsOrigin = config.getString("http.cors.origin")
+  val searchMaxAge = config.getInt("search.maxAgeSeconds").seconds
+  val autoCompleteMaxAge = config.getInt("autocomplete.maxAgeSeconds").seconds
+  val service = system.actorOf(Props(new SearchWebService(model, baseUrl, searchTimeout, corsOrigin, searchMaxAge, autoCompleteMaxAge)), "search-service")
 
   logger.info("Started service")
 }
@@ -63,7 +64,8 @@ trait WebApi extends RouteConcatenation with Logging {
  * Actor implementing a search service that delegates requests to a given model.
  */
 class SearchWebService(override val service: SearchService, override val baseUrl: String,
-  override val searchTimeout: Int)
+  override val searchTimeout: Int, override val corsOrigin: String,
+  override val searchMaxAge: Duration, override val autoCompleteMaxAge: Duration)
   extends HttpServiceActor with SearchApi {
 
   def receive = runRoute(route)

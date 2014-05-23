@@ -2,7 +2,7 @@ name := "search-service-spray"
 
 organization := "com.blinkbox.books"
 
-version := scala.io.Source.fromFile("VERSION").mkString.trim
+version := scala.util.Try(scala.io.Source.fromFile("VERSION").mkString.trim).getOrElse("0.0.0")
 
 scalaVersion  := "2.10.4"
 

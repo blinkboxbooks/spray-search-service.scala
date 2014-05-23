@@ -17,6 +17,7 @@ import spray.httpx.Json4sJacksonSupport
 import spray.httpx.marshalling.Marshaller
 import spray.routing.{ ExceptionHandler, HttpService, Route }
 import spray.util.LoggingContext
+import spray.http.HttpHeaders.RawHeader
 
 /**
  * API for search service, expressed as Spray routes.
@@ -29,6 +30,9 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
   val baseUrl: String
   val searchTimeout: Int
   def service: SearchService
+  val corsOrigin: String
+  val searchMaxAge: Duration
+  val autoCompleteMaxAge: Duration
 
   implicit val timeout = Timeout(searchTimeout.seconds)
   implicit def json4sJacksonFormats = blinkboxFormat(EntityTypeHints)
@@ -43,29 +47,32 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
     implicit val formats = blinkboxFormat(EntityTypeHints)
     Marshaller.delegate[T, String](`application/vnd.blinkboxbooks.data.v1+json`)(Serialization.write(_))
   }
-  
+
   /**
    * The overall route for the service.
    */
-  def route = get {
-    pathPrefix("search") {
-      searchForBooks ~ similarBooks ~ searchSuggestions
+  lazy val route = respondWithSingletonHeader(RawHeader("Access-Control-Allow-Origin", corsOrigin)) {
+    get {
+      pathPrefix("search") {
+        searchForBooks ~ similarBooks ~ searchSuggestions
+      }
     }
-
   }
 
   /**
    * Route for book search requests.
    */
-  def searchForBooks =
+  lazy val searchForBooks =
     pathSuffix("books") {
-      paged(defaultCount = 50) { page =>
-        ordered() { sortOrder =>
-          parameters('q) { query =>
-            val result = service.search(query, page.offset, page.count, sortOrder)
-            onSuccess(result) { result =>
-              complete(QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
-                links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books")))
+      cacheable(searchMaxAge) {
+        paged(defaultCount = 50) { page =>
+          ordered() { sortOrder =>
+            parameters('q) { query =>
+              val result = service.search(query, page.offset, page.count, sortOrder)
+              onSuccess(result) { result =>
+                complete(QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
+                  links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books")))
+              }
             }
           }
         }
@@ -75,13 +82,15 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
   /**
    * Route for search for similar books.
    */
-  def similarBooks =
+  lazy val similarBooks =
     path("books" / Isbn / "similar") { id =>
       paged(defaultCount = 10) { page =>
-        val result = service.findSimilar(id, page.offset, page.count)
-        onSuccess(result) { result =>
-          complete(SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
-            links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books/$id/similar")))
+        cacheable(searchMaxAge) {
+          val result = service.findSimilar(id, page.offset, page.count)
+          onSuccess(result) { result =>
+            complete(SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
+              links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books/$id/similar")))
+          }
         }
       }
     }
@@ -89,14 +98,16 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
   /**
    * Route for suggestions, i.e. auto-completion as you type in the search field.
    */
-  def searchSuggestions =
+  lazy val searchSuggestions =
     path("suggestions") {
-      paged(defaultCount = 10) { page =>
-        parameters('q) { query =>
-          val result = service.suggestions(query, page.offset, page.count)
-          implicit val typedJacksonFormats = blinkboxFormat()
-          onSuccess(result) { suggestions =>
-            complete(SuggestionsResult(suggestions))
+      cacheable(autoCompleteMaxAge) {
+        paged(defaultCount = 10) { page =>
+          parameters('q) { query =>
+            val result = service.suggestions(query, page.offset, page.count)
+            implicit val typedJacksonFormats = blinkboxFormat()
+            onSuccess(result) { suggestions =>
+              complete(SuggestionsResult(suggestions))
+            }
           }
         }
       }
