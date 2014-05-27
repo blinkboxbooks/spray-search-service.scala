@@ -124,15 +124,15 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   test("simple search") {
     Get("/search/books?q=Builder") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
       val result = searchResult
-      assert(result.numberOfResults === 1, "Should just match the one book")
-      assert(result.books.size === 1)
+      assert(result.numberOfResults == 1 &&
+        result.books.size == 1, "Should just match the one book")
 
       val book = result.books.head
-      assert(book.title === "Bob the Builder")
-      assert(book.authors.toSet == Set("John Smith"))
-      assert(result.suggestions === Seq(), "Shouldn't offer spelling suggestions")
+      assert(book.title == "Bob the Builder" &&
+        book.authors.toSet == Set("John Smith") &&
+        result.suggestions == Seq(), "Shouldn't offer spelling suggestions")
     }
   }
 
@@ -153,52 +153,52 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   test("search for book not in index") {
     Get("/search/books?q=ATermThatDoesntExistInTheIndex") ~> route ~> check {
-      assert(status === OK)
       val result = searchResult
-      assert(result.numberOfResults === 0, "Shouldn't match any books")
-      assert(result.books.size === 0)
+      assert(status == OK &&
+        result.numberOfResults == 0 &&
+        result.books.size == 0, "Shouldn't match any books")
     }
   }
 
   test("search for author name") {
     Get("/search/books?q=Smythe") ~> route ~> check {
       val result = searchResult
-      assert(result.numberOfResults === 1, "Should just match the one book")
-      assert(result.books.size === 1)
+      assert(result.numberOfResults == 1 &&
+        result.books.size == 1, "Should just match the one book")
 
       val book = result.books.head
-      assert(book.title === "Walking for Brummies")
-      assert(book.authors.toSet == Set("John Smythe"))
-      assert(result.suggestions === Seq(), "Shouldn't offer spelling suggestions")
+      assert(book.title == "Walking for Brummies" &&
+        book.authors.toSet == Set("John Smythe") &&
+        result.suggestions == Seq())
     }
   }
 
   test("search for book and author name") {
     Get("/search/books?q=Bob+Builder+Smith") ~> route ~> check {
       val result = searchResult
-      assert(result.numberOfResults === 2, "Should match on either title or author fields")
-      assert(result.books.size === 2)
+      assert(result.books.size == 2 &&
+        result.numberOfResults == 2, "Should match on either title or author fields")
 
       val book = result.books.head
-      assert(book.title === "Bob the Builder", "The first match should be the one that matches both author and title")
+      assert(book.title == "Bob the Builder", "The first match should be the one that matches both author and title")
 
-      assert(result.suggestions === Seq(), "Shouldn't offer spelling suggestions")
+      assert(result.suggestions == Seq(), "Shouldn't offer spelling suggestions")
     }
   }
 
   test("search for free books") {
     Get("/search/books?q=Free") ~> route ~> check {
       val result = searchResult
-      assert(result.numberOfResults === 3, "Should match all books with a 0 price")
-      assert(result.books.size === 3)
+      assert(result.books.size == 3 &&
+        result.numberOfResults == 3, "Should match all books with a 0 price")
     }
   }
 
   test("search for specific free books") {
     Get("/search/books?q=Free+Selected") ~> route ~> check {
       val result = searchResult
-      assert(result.numberOfResults === 1, "Should match the specific 0 price")
-      assert(result.books.size === 1)
+      assert(result.books.size == 1 &&
+        result.numberOfResults == 1, "Should match the specific 0 price")
     }
   }
 
@@ -236,8 +236,8 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     val results = requestUrls.map(requestUrl => Get(requestUrl) ~> route ~> check { searchResult.books })
     val distinctResults = results.toSet
 
-    assert(results(0).size === expectedNumber, s"Should get $expectedNumber results for search, got ${results.size}")
-    assert(distinctResults.size === 1, s"Results for searches '$requests' 'should all be the same, got: $distinctResults")
+    assert(results(0).size == expectedNumber, s"Should get $expectedNumber results for search, got ${results.size}")
+    assert(distinctResults.size == 1, s"Results for searches '$requests' 'should all be the same, got: $distinctResults")
   }
 
   //
@@ -262,7 +262,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
     Get("/search/suggestions?q=smythe") ~> route ~> check {
       val results = suggestions
-      assert(results.items.size === 2, "Should get author and book that match query")
+      assert(results.items.size == 2, "Should get author and book that match query")
 
       val entities = results.items.groupBy(_.title)
       assert(entities.contains("John Smythe"))
@@ -272,9 +272,9 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   test("suggestions when query has no matches") {
     Get("/search/suggestions?q=qwerty") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
       val results = suggestions
-      assert(results.items === List(), "Should get empty list of suggestions")
+      assert(results.items == List(), "Should get empty list of suggestions")
     }
   }
 
@@ -285,7 +285,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
     // Check that suggestions ignore this book.
     Get("/search/suggestions?q=john+smith") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
       val results = suggestions
       assert(!suggestions.items.exists(item => item.id == id))
     }
@@ -300,10 +300,10 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     // are the other books in the series.
     val inputIsbn = "1000000001001"
     Get(s"/search/books/$inputIsbn/similar") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
       val results = similarBooksResult
       results.books.take(SeriesCount - 1).foreach(book => {
-        assert(book.authors === Seq("Martin George"), s"Book should be in same series, got: $book")
+        assert(book.authors == Seq("Martin George"), s"Book should be in same series, got: $book")
         assert(book.id != inputIsbn)
       })
     }
@@ -312,9 +312,9 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   test("query for similar books with unknown ID") {
     // Make a request that results in no books coming back.
     Get("/search/books/9999999999999/similar") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
       val results = similarBooksResult
-      assert(results.numberOfResults === 0)
+      assert(results.numberOfResults == 0)
 
       // The code for this need fixing as getResults in the Solr response returns null when nothing was found (ugh!).
     }
@@ -326,26 +326,26 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   test("Spelling suggestion for search with single term") {
     Get("/search/books?q=gamex") ~> route ~> check {
-      assert(searchResult.suggestions === List("game"))
+      assert(searchResult.suggestions == List("game"))
     }
   }
 
   test("Spelling suggestion for search with multiple terms, one of which is misspelled") {
     Get("/search/books?q=game+of+dronxs") ~> route ~> check {
-      assert(searchResult.suggestions === List("game of drones"))
+      assert(searchResult.suggestions == List("game of drones"))
     }
   }
 
   test("Spelling suggestion for search with multiple terms, several of which are misspelled") {
     Get("/search/books?q=grame+of+dronxs") ~> route ~> check {
-      assert(searchResult.suggestions === List("game of drones"))
+      assert(searchResult.suggestions == List("game of drones"))
     }
   }
 
   test("Terms that are similar enough to known words to cause a spelling suggestion") {
     for (searchString <- Seq("grame", "gamer", "gamert", "gbme", "gamte")) {
       Get(s"/search/books?q=$searchString") ~> route ~> check {
-        assert(searchResult.suggestions === List("game"), s"Search for '$searchString' should product spelling suggestion")
+        assert(searchResult.suggestions == List("game"), s"Search for '$searchString' should product spelling suggestion")
       }
     }
   }
@@ -354,7 +354,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
     for (searchString <- Seq("tiddlywinks", "frone", "gramers")) {
       Get(s"/search/books?q=$searchString") ~> route ~> check {
         val suggestions = searchResult.suggestions
-        assert(suggestions === List(), s"Search for '$searchString' shouldn't result in suggestions, got '$suggestions'")
+        assert(suggestions == List(), s"Search for '$searchString' shouldn't result in suggestions, got '$suggestions'")
       }
     }
   }

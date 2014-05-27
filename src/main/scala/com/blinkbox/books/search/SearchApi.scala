@@ -64,15 +64,13 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
    */
   lazy val searchForBooks =
     pathSuffix("books") {
-      cacheable(searchMaxAge) {
-        paged(defaultCount = 50) { page =>
-          ordered() { sortOrder =>
-            parameters('q) { query =>
-              val result = service.search(query, page.offset, page.count, sortOrder)
-              onSuccess(result) { result =>
-                complete(QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
-                  links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books")))
-              }
+      paged(defaultCount = 50) { page =>
+        ordered() { sortOrder =>
+          parameters('q) { query =>
+            val result = service.search(query, page.offset, page.count, sortOrder)
+            onSuccess(result) { result =>
+              cacheable(searchMaxAge, QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
+                links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books")))
             }
           }
         }
@@ -85,12 +83,10 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
   lazy val similarBooks =
     path("books" / Isbn / "similar") { id =>
       paged(defaultCount = 10) { page =>
-        cacheable(searchMaxAge) {
-          val result = service.findSimilar(id, page.offset, page.count)
-          onSuccess(result) { result =>
-            complete(SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
-              links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books/$id/similar")))
-          }
+        val result = service.findSimilar(id, page.offset, page.count)
+        onSuccess(result) { result =>
+          cacheable(searchMaxAge, SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
+            links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books/$id/similar")))
         }
       }
     }
@@ -100,14 +96,12 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
    */
   lazy val searchSuggestions =
     path("suggestions") {
-      cacheable(autoCompleteMaxAge) {
-        paged(defaultCount = 10) { page =>
-          parameters('q) { query =>
-            val result = service.suggestions(query, page.offset, page.count)
-            implicit val typedJacksonFormats = blinkboxFormat()
-            onSuccess(result) { suggestions =>
-              complete(SuggestionsResult(suggestions))
-            }
+      paged(defaultCount = 10) { page =>
+        parameters('q) { query =>
+          val result = service.suggestions(query, page.offset, page.count)
+          implicit val typedJacksonFormats = blinkboxFormat()
+          onSuccess(result) { suggestions =>
+            cacheable(autoCompleteMaxAge, SuggestionsResult(suggestions))
           }
         }
       }

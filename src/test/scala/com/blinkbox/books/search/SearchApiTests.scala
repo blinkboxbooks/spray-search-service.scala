@@ -58,10 +58,10 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
   test("simple search for book") {
     Get("/search/books?q=some+words") ~> route ~> check {
-      assert(status === OK)
-      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8")
-      assert(header("Access-Control-Allow-Origin").get.value === corsOrigin)
-      assert(header("Cache-Control").get.value === s"public, max-age=${searchMaxAge.toSeconds}")
+      assert(status == OK &&
+        contentType.value == "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8" &&
+        header("Access-Control-Allow-Origin").get.value == corsOrigin &&
+        header("Cache-Control").get.value == s"public, max-age=${searchMaxAge.toSeconds}")
 
       // Check performed query, including default parameters.
       verify(service).search("some words", 0, 50, SortOrder("RELEVANCE", true))
@@ -97,7 +97,7 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     ]
     }"""
       // Compare normalised JSON string representations.
-      assert(parse(body.data.asString).toString === parse(expectedJson).toString, "Got: \n" + body.data.asString)
+      assert(parse(body.data.asString).toString == parse(expectedJson).toString, "Got: \n" + body.data.asString)
     }
   }
 
@@ -109,19 +109,19 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       .search(anyString, Matchers.eq(offset), Matchers.eq(count), any[SortOrder])
 
     Get(s"/search/books?q=some+words&count=$count&order=POPULARITY&desc=false&offset=$offset") ~> route ~> check {
-      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8")
-      assert(status === OK)
+      assert(status == OK &&
+        contentType.value == "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8")
 
       // Check request parameters were picked up correctly.
       verify(service).search("some words", offset, count, SortOrder("POPULARITY", false))
 
       // Check that the JSON response is correct
       val result = parse(body.data.asString).extract[QuerySearchResult]
-      assert(result.numberOfResults === searchResults.numberOfResults)
+      assert(result.numberOfResults == searchResults.numberOfResults)
 
       // Check the expected links, ignoring their order in the returned list.
       val links = result.links.groupBy(_.rel).mapValues(_.head.href)
-      assert(links === Map(
+      assert(links == Map(
         "this" -> s"service/search/books?count=$count&offset=$offset",
         "next" -> s"service/search/books?count=$count&offset=${offset + count}",
         "prev" -> s"service/search/books?count=$count&offset=0"))
@@ -133,12 +133,11 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       .when(service).search(anyString, anyInt, anyInt, any[SortOrder])
 
     Get("/search/books?q=unmatched&count=10") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
       val result = parse(body.data.asString).extract[QuerySearchResult]
-      assert(result.numberOfResults === 0)
-
-      assert(result.links.size === 1)
-      assert(result.links(0) === PageLink("this", s"service/search/books?count=10&offset=0"))
+      assert(result.numberOfResults == 0 &&
+        result.links.size == 1 &&
+        result.links(0) == PageLink("this", s"service/search/books?count=10&offset=0"))
     }
   }
 
@@ -164,20 +163,20 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       // Return failure from mock service.
       doReturn(Future(throw exception)).when(service).search(anyString, anyInt, anyInt, any[SortOrder])
       Get("/search/books?q=some+query") ~> route ~> check {
-        assert(status === excectedCode)
+        assert(status == excectedCode)
       }
     }
   }
 
   test("simple query for suggestions") {
     Get("/search/suggestions?q=foo") ~> route ~> check {
-      assert(status === OK)
-      assert(contentType.value === "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8")
-      assert(header("Access-Control-Allow-Origin").get.value === corsOrigin)
-      assert(header("Cache-Control").get.value === s"public, max-age=${autoCompleteMaxAge.toSeconds}")
+      assert(status == OK &&
+        contentType.value == "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8" &&
+        header("Access-Control-Allow-Origin").get.value == corsOrigin &&
+        header("Cache-Control").get.value == s"public, max-age=${autoCompleteMaxAge.toSeconds}")
 
       val result = parse(body.data.asString).extract[SuggestionsResult]
-      assert(result.items === suggestions, "Got: " + body.data.asString)
+      assert(result.items == suggestions, "Got: " + body.data.asString)
     }
   }
 
@@ -185,38 +184,38 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     val (offset, count) = (5, 15)
 
     Get(s"/search/suggestions?q=foo&offset=$offset&count=$count") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
 
       // Check query parameters in request.
       verify(service).suggestions("foo", offset, count)
 
       // Check if the json response is correct
       val result = parse(body.data.asString).extract[SuggestionsResult]
-      assert(result.items === suggestions)
+      assert(result.items == suggestions)
     }
   }
 
   test("simple query for similar books") {
     Get(s"/search/books/$isbn/similar") ~> route ~> check {
-      assert(status === OK)
-      assert(header("Access-Control-Allow-Origin").get.value === corsOrigin)
-      assert(header("Cache-Control").get.value === s"public, max-age=${searchMaxAge.toSeconds}")
+      assert(status == OK &&
+        header("Access-Control-Allow-Origin").get.value == corsOrigin &&
+        header("Cache-Control").get.value == s"public, max-age=${searchMaxAge.toSeconds}")
 
       // Check performed query, including default parameters.
       verify(service).findSimilar(isbn, 0, 10)
 
       // Check returned results.
       val result = parse(body.data.asString).extract[SimilarBooksSearchResult]
-      assert(result.numberOfResults === similar.numberOfResults)
-      assert(result.books === similar.books)
-      assert(result.suggestions === similar.suggestions)
+      assert(result.numberOfResults == similar.numberOfResults &&
+        result.books == similar.books &&
+        result.suggestions == similar.suggestions)
     }
   }
 
   test("query for similar books with query parameters") {
     val (offset, count) = (2, 18)
     Get(s"/search/books/$isbn/similar?offset=$offset&count=$count") ~> route ~> check {
-      assert(status === OK)
+      assert(status == OK)
 
       // Check performed query, including default parameters.
       verify(service).findSimilar(isbn, offset, count)
@@ -224,9 +223,9 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
       // Check returned results.
       val str = body.data.asString
       val result = parse(body.data.asString).extract[SimilarBooksSearchResult]
-      assert(result.numberOfResults === similar.numberOfResults)
-      assert(result.books === similar.books)
-      assert(result.suggestions === similar.suggestions)
+      assert(result.numberOfResults == similar.numberOfResults &&
+        result.books == similar.books &&
+        result.suggestions == similar.suggestions)
     }
   }
 

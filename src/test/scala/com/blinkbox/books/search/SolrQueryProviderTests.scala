@@ -20,51 +20,51 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
   test("search with simple single term query") {
     // I think it should be possible to simplify these search queries, e.g. by moving the boosts to the 
     // config of the request handlers.
-    assert(queryString("dickens") ===
+    assert(queryString("dickens") ==
       """( name_field:(dicken's) OR name_field:(dickens) )^10 OR ( content_field:(dicken's) OR content_field:(dickens) ) OR author_exact_field:("dickens")^25 OR title_exact_field:("dickens")^25""")
   }
 
   test("search with simple multi-term query") {
-    assert(queryString("charles dickens") ===
+    assert(queryString("charles dickens") ==
       """( name_field:(charle's dicken's) OR name_field:(charles dickens) )^10 OR ( content_field:(charle's dicken's) OR content_field:(charles dickens) ) OR ( author_exact_field:("charle's dickens") OR author_exact_field:("charles dickens") )^25 OR ( title_exact_field:("charle's dickens") OR title_exact_field:("charles dickens") )^25""")
   }
 
   test("search with lower case and trim queries") {
-    assert(queryString(" with white space  ") === queryString("with white space"))
-    assert(queryString("With MIXED Case") === queryString("with mixed case"))
-    assert(queryString("With a mixture Of things ") === queryString("with a mixture of things"))
+    assert(queryString(" with white space  ") == queryString("with white space"))
+    assert(queryString("With MIXED Case") == queryString("with mixed case"))
+    assert(queryString("With a mixture Of things ") == queryString("with a mixture of things"))
   }
 
   test("search for free books") {
     val expectedFreeBookQuery = "price:0"
-    assert(queryString("free") === expectedFreeBookQuery)
-    assert(queryString(" free  ") === expectedFreeBookQuery)
-    assert(queryString("Free") === expectedFreeBookQuery)
-    assert(queryString(" Free  ") === expectedFreeBookQuery)
+    for (str <- Seq("free", " free", " free  ", "Free", " Free  ")) {
+      assert(queryString(str) == expectedFreeBookQuery)
+    }
   }
 
   test("search for specific free books") {
     // This the current behaviour - not convinced this is sensible though: 
     // For example, searching for "free religion" will not find the book "how free can religion be?"
     // as the "free" bit is stripped off.
-    assert(queryString("free spirits") === "price:0 AND ( name_field:spirit's OR name_field:spirits )")
-    assert(queryString("spirits free") === "price:0 AND ( name_field:spirit's OR name_field:spirits )")
+    assert(queryString("free spirits") == "price:0 AND ( name_field:spirit's OR name_field:spirits )")
+    assert(queryString("spirits free") == "price:0 AND ( name_field:spirit's OR name_field:spirits )")
     // TODO: I think the following is a bug in the original code!
-    //assert(queryString("free your mind") === "price:0 AND ( name_field:your OR name_field:mind )")
+    //assert(queryString("free your mind") == "price:0 AND ( name_field:your OR name_field:mind )")
   }
 
   test("search for ISBN") {
-    assert(queryString("1234567890123") === "isbn:1234567890123")
-    assert(queryString(" 1234567890123") === "isbn:1234567890123")
-    assert(queryString("1234567890123  ") === "isbn:1234567890123")
+    val expectedQuery = "isbn:1234567890123"
+    for (str <- Seq("1234567890123", " 1234567890123", "1234567890123  ")) {
+      assert(queryString(str) == expectedQuery)
+    }
   }
 
   test("suggestions for single term") {
-    assert(provider.suggestionsQueryString("foo") === "name_field:(foo*)")
+    assert(provider.suggestionsQueryString("foo") == "name_field:(foo*)")
   }
 
   test("suggestions for multiple terms") {
-    assert(provider.suggestionsQueryString("foo bar baz") === "name_field:(foo bar baz*)")
+    assert(provider.suggestionsQueryString("foo bar baz") == "name_field:(foo bar baz*)")
   }
 
   test("suggestions for empty string") {
@@ -72,16 +72,16 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
   }
 
   test("suggestions for search term where apostrophe should be inserted") {
-    assert(provider.suggestionsQueryString("enders") === "( name_field:(ender's*) OR name_field:(enders*) )")
-    assert(provider.suggestionsQueryString("enders game") === "( name_field:(ender's game*) OR name_field:(enders game*) )")
+    assert(provider.suggestionsQueryString("enders") == "( name_field:(ender's*) OR name_field:(enders*) )")
+    assert(provider.suggestionsQueryString("enders game") == "( name_field:(ender's game*) OR name_field:(enders game*) )")
   }
 
   test("clean should replace ampersand") {
-    assert(clean("&") === "and")
+    assert(clean("&") == "and")
   }
 
   test("clean invalid characters") {
-    assert(clean("!\"£$%^*()_-+=[{]};:'@#~,<.>/?") === "!-;',.")
+    assert(clean("!\"£$%^*()_-+=[{]};:'@#~,<.>/?") == "!-;',.")
   }
 
   test("international characters should go through cleaning unchanged") {
@@ -109,7 +109,7 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
   private def queryString(searchString: String) = provider.queryString(searchString)
 
   private def checkUnchanged(query: String) =
-    assert(clean(query) === query.toLowerCase(), "Query '" + query
+    assert(clean(query) == query.toLowerCase(), "Query '" + query
       + "' should be lowercased, and otherwise unchanged")
 
 }
