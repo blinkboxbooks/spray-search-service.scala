@@ -22,7 +22,7 @@ import spray.http.HttpHeaders.RawHeader
 /**
  * API for search service, expressed as Spray routes.
  */
-trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonSupport with Directives {
+trait SearchApi extends HttpService with Version1JsonSupport with Directives {
 
   import SearchApi._
 
@@ -35,18 +35,13 @@ trait SearchApi extends HttpService with Json4sJacksonSupport with Version1JsonS
   val autoCompleteMaxAge: Duration
 
   implicit val timeout = Timeout(searchTimeout.seconds)
-  implicit def json4sJacksonFormats = blinkboxFormat(EntityTypeHints)
+  implicit override def version1JsonFormats = blinkboxFormat(EntityTypeHints)
 
   implicit def myExceptionHandler(implicit log: LoggingContext) =
     ExceptionHandler {
       case e: IllegalArgumentException =>
         requestUri { uri => complete(BadRequest, s"Invalid request: ${e.getMessage}") }
     }
-
-  implicit override def version1JsonMarshaller[T <: AnyRef] = {
-    implicit val formats = blinkboxFormat(EntityTypeHints)
-    Marshaller.delegate[T, String](`application/vnd.blinkboxbooks.data.v1+json`)(Serialization.write(_))
-  }
 
   /**
    * The overall route for the service.
