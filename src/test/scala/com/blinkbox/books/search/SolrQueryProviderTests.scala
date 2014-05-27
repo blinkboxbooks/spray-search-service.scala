@@ -11,7 +11,9 @@ import StandardSolrQueryProvider._
 @RunWith(classOf[JUnitRunner])
 class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
 
-  val provider: StandardSolrQueryProvider = new StandardSolrQueryProvider()
+  val searchConfig = new SolrSearchConfig(Seq("free books", "free", "test free books"), 2.0, 2.5, 3.0, 4.0)
+
+  val provider: StandardSolrQueryProvider = new StandardSolrQueryProvider(searchConfig)
 
   test("search with empty query") {
     intercept[Exception] { queryString("") }
@@ -21,12 +23,17 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
     // I think it should be possible to simplify these search queries, e.g. by moving the boosts to the 
     // config of the request handlers.
     assert(queryString("dickens") ==
-      """( name_field:(dicken's) OR name_field:(dickens) )^10 OR ( content_field:(dicken's) OR content_field:(dickens) ) OR author_exact_field:("dickens")^25 OR title_exact_field:("dickens")^25""")
+      """( name_field:(dicken's) OR name_field:(dickens) )^2.0 OR """ +
+      """( content_field:(dicken's) OR content_field:(dickens) )^2.5 OR """ +
+      """author_exact_field:("dickens")^3.0 OR title_exact_field:("dickens")^4.0""")
   }
 
   test("search with simple multi-term query") {
     assert(queryString("charles dickens") ==
-      """( name_field:(charle's dicken's) OR name_field:(charles dickens) )^10 OR ( content_field:(charle's dicken's) OR content_field:(charles dickens) ) OR ( author_exact_field:("charle's dickens") OR author_exact_field:("charles dickens") )^25 OR ( title_exact_field:("charle's dickens") OR title_exact_field:("charles dickens") )^25""")
+      """( name_field:(charle's dicken's) OR name_field:(charles dickens) )^2.0 OR """ +
+      """( content_field:(charle's dicken's) OR content_field:(charles dickens) )^2.5 OR """ +
+      """( author_exact_field:("charle's dickens") OR author_exact_field:("charles dickens") )^3.0 OR """ +
+      """( title_exact_field:("charle's dickens") OR title_exact_field:("charles dickens") )^4.0""")
   }
 
   test("search with lower case and trim queries") {

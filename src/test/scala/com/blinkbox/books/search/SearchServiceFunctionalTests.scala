@@ -48,6 +48,8 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
 
   val SeriesCount = 5
 
+  val searchConfig = new SolrSearchConfig(Seq("free books", "free", "test free books"), 1.0, 1.5, 2.0, 3.0)
+
   /** Set up the embdedded Solr instance once for all tests. */
   override def beforeAll() {
     super.beforeAll()
@@ -82,7 +84,7 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
   before {
-    searchService = new SolrSearchService(solrServer)
+    searchService = new SolrSearchService(searchConfig, solrServer)
   }
 
   def addBooks() {
@@ -187,10 +189,16 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
   test("search for free books") {
-    Get("/search/books?q=Free") ~> route ~> check {
-      val result = searchResult
-      assert(result.books.size == 3 &&
-        result.numberOfResults == 3, "Should match all books with a 0 price")
+    for (
+      configuredQuery <- searchConfig.freeQueries;
+      query <- Seq(configuredQuery, configuredQuery.toLowerCase, configuredQuery.toUpperCase);
+      encodedQuery = URLEncoder.encode(query, "UTF-8")
+    ) {
+      Get(s"/search/books?q=$encodedQuery") ~> route ~> check {
+        val result = searchResult
+        assert(result.books.size == 3 &&
+          result.numberOfResults == 3, s"Should match all books with a 0 price when searching for '$query'")
+      }
     }
   }
 

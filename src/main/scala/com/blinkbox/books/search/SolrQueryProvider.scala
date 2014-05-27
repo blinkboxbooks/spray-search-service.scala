@@ -8,7 +8,6 @@ import scala.util.{ Try, Success, Failure }
 import QueryBuilder.Operator
 import SolrConstants._
 
-
 /**
  * Common interface for things that takes user search strings and turns them to Solr queries.
  */
@@ -31,7 +30,7 @@ trait SolrQueryProvider {
 /**
  *  Wraps up the query processing as done in the previous version of the search service.
  */
-class StandardSolrQueryProvider extends SolrQueryProvider {
+class StandardSolrQueryProvider(val config: SolrSearchConfig) extends SolrQueryProvider {
 
   import StandardSolrQueryProvider._
 
@@ -40,7 +39,7 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
     val query = clean(searchString) match {
       case q if StringUtils.isBlank(q) => throw new Exception(s"Invalid or empty search term: $q")
       case Isbn(isbn) => QueryBuilder.build("isbn", isbn)
-      case q if freeBooksQueries.contains(q) => QueryBuilder.build(PRICE_FIELD, "0");
+      case q if config.freeQueries.contains(q) => QueryBuilder.build(PRICE_FIELD, "0");
       case q if q.startsWith("free ") => buildFreeQuery(q.substring(5))
       case q if q.endsWith(" free") => buildFreeQuery(q.substring(0, q.length() - 5))
       case q => buildQuery(q)
@@ -56,15 +55,23 @@ class StandardSolrQueryProvider extends SolrQueryProvider {
       .toString
   }
 
+  /** Build normal meta-data search. */
+  private def buildQuery(queryString: String): QueryBuilder =
+    new QueryBuilder(Operator.OR, true)
+      .append(NAME_FIELD, queryString, config.nameBoost)
+      .append(CONTENT_FIELD, queryString, config.contentBoost)
+      .append(AUTHOR_EXACT_FIELD, queryString, config.exactAuthorBoost)
+      .append(TITLE_EXACT_FIELD, queryString, config.exactTitleBoost)
+
+  /** Builds a free books query with a subject extracted from the search term. */
+  private def buildFreeQuery(subject: String): QueryBuilder =
+    new QueryBuilder(Operator.AND, false)
+      .append(PRICE_FIELD, "0")
+      .append(NAME_FIELD, subject)
+
 }
 
 object StandardSolrQueryProvider {
-
-  private val freeBooksQueries = Seq("free")
-  private val nameFieldBoost = 10 // TODO: Make these configurable.
-  private val contentFieldBoost = 1
-  private val authorExactBoost = 25
-  private val titleExactBoost = 25
 
   val validCharacterMatcher = CharMatcher.JAVA_LETTER_OR_DIGIT
     .or(CharMatcher.anyOf("-,.';!"))
@@ -78,20 +85,6 @@ object StandardSolrQueryProvider {
   // #CP-188: Replace ampersands
   def clean(query: String): String =
     validCharacterMatcher.retainFrom(query.trim().toLowerCase().replaceAll("&", "and"))
-
-  /** Build normal meta-data search. */
-  def buildQuery(queryString: String): QueryBuilder =
-    new QueryBuilder(Operator.OR, true)
-      .append(NAME_FIELD, queryString, nameFieldBoost)
-      .append(CONTENT_FIELD, queryString, contentFieldBoost)
-      .append(AUTHOR_EXACT_FIELD, queryString, authorExactBoost)
-      .append(TITLE_EXACT_FIELD, queryString, titleExactBoost)
-
-  /** Builds a free books query with a subject extracted from the search term. */
-  def buildFreeQuery(subject: String): QueryBuilder =
-    new QueryBuilder(Operator.AND, false)
-      .append(PRICE_FIELD, "0")
-      .append(NAME_FIELD, subject)
 
 }
 

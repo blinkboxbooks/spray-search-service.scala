@@ -138,7 +138,7 @@ public class QueryBuilder {
      * @param boost
      *            Boost value 1..n
      */
-    public QueryBuilder append(String field, String query, int boost) {
+    public QueryBuilder append(String field, String query, double boost) {
         if (field.contains("exact")) {
             query = "\"" + query + "\"";
         }

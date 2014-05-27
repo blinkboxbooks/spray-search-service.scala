@@ -10,7 +10,17 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class SolrSearchService(solrServer: SolrServer) extends SearchService {
+case class SolrSearchConfig(
+  val freeQueries: Seq[String],
+  val nameBoost: Double,
+  val contentBoost: Double,
+  val exactAuthorBoost: Double,
+  val exactTitleBoost: Double) {
+
+  require(freeQueries.size > 0, "Must be configured with at least one search term for free books")
+}
+
+class SolrSearchService(config: SolrSearchConfig, solrServer: SolrServer) extends SearchService {
 
   import SolrConstants._
   import SolrUtils._
@@ -18,7 +28,7 @@ class SolrSearchService(solrServer: SolrServer) extends SearchService {
   private val Fields = Array("isbn", "title", "author", "author_guid")
   private val RelevanceOrder = SortOrder("RELEVANCE", true)
 
-  private val queryProvider = new StandardSolrQueryProvider()
+  private val queryProvider = new StandardSolrQueryProvider(config)
 
   override def search(searchString: String, offset: Int, count: Int, order: SortOrder) = Future {
     val queryStr = queryProvider.queryString(searchString)

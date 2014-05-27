@@ -33,7 +33,7 @@ public class QueryBuilderTest {
     @Test
     public void appendBoosted() {
         builder.append("field", "term", 42);
-        assertEquals("field:(term)^42", builder.toString());
+        assertEquals("field:(term)^42.0", builder.toString());
     }
 
     @Test

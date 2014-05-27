@@ -42,22 +42,26 @@ trait WebApi extends RouteConcatenation with Logging {
   val solrServer = new HttpSolrServer(solrUrl)
   solrServer.setParser(new XMLResponseParser())
 
-  val freeQueries = config.getString("search.free.queries") // TODO: Pass into model.
-  val nameBoost = config.getDouble("search.name.boost") // -- "" --
-  val contentBoost = config.getDouble("search.content.boost") // -- "" --
-  val exactAuthorBoost = config.getDouble("search.exact.author.boost") // -- "" --
-  val exactTitleBoost = config.getDouble("search.exact.title.boost") // -- "" --
+  val freeQueries = config.getString("search.free.queries").split(",").map(_.toLowerCase.trim)
+  val nameBoost = config.getDouble("search.name.boost")
+  val contentBoost = config.getDouble("search.content.boost")
+  val exactAuthorBoost = config.getDouble("search.exact.author.boost")
+  val exactTitleBoost = config.getDouble("search.exact.title.boost")
+  val searchConfig = new SolrSearchConfig(freeQueries, nameBoost, contentBoost, exactAuthorBoost, exactTitleBoost)
+  logger.info(s"Search parameter configuration: $searchConfig")
 
-  val model = new SolrSearchService(solrServer)
+  val service = new SolrSearchService(searchConfig, solrServer)
 
   val baseUrl = config.getString("search.path")
   val searchTimeout = config.getInt("search.timeout")
   val corsOrigin = config.getString("http.cors.origin")
   val searchMaxAge = config.getInt("search.maxAgeSeconds").seconds
   val autoCompleteMaxAge = config.getInt("autocomplete.maxAgeSeconds").seconds
-  val service = system.actorOf(Props(new SearchWebService(model, baseUrl, searchTimeout, corsOrigin, searchMaxAge, autoCompleteMaxAge)), "search-service")
+  
+  val webService = system.actorOf(Props(
+    new SearchWebService(service, baseUrl, searchTimeout, corsOrigin, searchMaxAge, autoCompleteMaxAge)), "search-service")
 
-  logger.info("Started service")
+  logger.info("Started web service")
 }
 
 /**
@@ -77,6 +81,6 @@ class SearchWebService(override val service: SearchService, override val baseUrl
  */
 object WebApp extends App with BootedCore with ConfiguredCore with WebApi with Configuration {
 
-  IO(Http)(system) ! Http.Bind(service, "0.0.0.0", port = config.getInt("search.port"))
+  IO(Http)(system) ! Http.Bind(webService, "0.0.0.0", port = config.getInt("search.port"))
 
 }
