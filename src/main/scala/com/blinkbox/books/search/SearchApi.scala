@@ -5,7 +5,7 @@ import com.blinkbox.books.search.SearchService._
 import com.blinkbox.books.spray.JsonFormats._
 import com.blinkbox.books.spray.Directives
 import com.blinkbox.books.spray.Paging._
-import com.blinkbox.books.spray.Version1JsonSupport
+import com.blinkbox.books.spray.v1.Version1JsonSupport
 import org.json4s.jackson.Serialization
 import org.json4s.NoTypeHints
 import org.json4s.Serialization
@@ -35,7 +35,8 @@ trait SearchApi extends HttpService with Version1JsonSupport with Directives {
   val autoCompleteMaxAge: Duration
 
   implicit val timeout = Timeout(searchTimeout.seconds)
-  implicit override def version1JsonFormats = blinkboxFormat(EntityTypeHints)
+  
+  override def responseTypeHints = EntityTypeHints
 
   implicit def myExceptionHandler(implicit log: LoggingContext) =
     ExceptionHandler {

@@ -17,11 +17,11 @@ libraryDependencies ++= {
   val sprayV = "1.3.1"
   val solrV = "4.8.0"
   Seq(
-    "com.blinkbox.books"  %%  "common-spray"    % "0.3.0",
-    "com.blinkbox.books"  %%  "common-config"   % "0.0.1",
+    "com.blinkbox.books"  %%  "common-spray"    % "0.7.2",
+    "com.blinkbox.books"  %%  "common-config"   % "0.2.1",
     "com.typesafe"        %%  "scalalogging-slf4j" % "1.1.0",
     "ch.qos.logback"      %   "logback-classic" % "1.1.2",
-    "org.scalatest"       %%  "scalatest"       % "2.2.0-M1" % "test",
+    "org.scalatest"       %%  "scalatest"       % "2.2.0-RC1" % "test",
     "org.mockito"         %   "mockito-core"    % "1.9.5" % "test",
     "junit"               %   "junit"           % "4.11" % "test",
     "com.novocode"        %   "junit-interface" % "0.10" % "test",
