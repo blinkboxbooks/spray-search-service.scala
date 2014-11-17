@@ -1,6 +1,8 @@
 *.class
 *.log
 *.properties
+*.iml
+.idea/
 
 # sbt specific
 dist/*
@@ -17,4 +19,7 @@ project/plugins/project/
 .worksheet
 *.sc
 /bin
-
+.project
+.cache
+.classpath
+.settings

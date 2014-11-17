@@ -2,20 +2,21 @@ package com.blinkbox.books.search
 
 import akka.actor.{ Actor, Props, ActorSystem }
 import akka.io.IO
+import com.blinkbox.books.config.Configuration
+import com.typesafe.scalalogging.slf4j.StrictLogging
 import org.apache.solr.client.solrj.impl.HttpSolrServer
 import org.apache.solr.client.solrj.impl.XMLResponseParser
 import scala.concurrent.duration._
 import spray.can.Http
 import spray.routing._
-import com.typesafe.scalalogging.slf4j.Logging
-import com.blinkbox.books.config.Configuration
+import com.blinkbox.books.logging.Loggers
 
 trait Core {
   implicit def system: ActorSystem
 }
 
-trait BootedCore extends Core {
-  implicit lazy val system = ActorSystem("akka-spray")
+trait BootedCore extends Core with Configuration {
+  implicit lazy val system = ActorSystem("akka-spray", config)
   sys.addShutdownHook(system.shutdown())
 }
 
@@ -24,7 +25,7 @@ trait ConfiguredCore extends Core with Configuration
 /**
  * A trait that contains the bulk of the start-up code for the service.
  */
-trait WebApi extends RouteConcatenation with Logging {
+trait WebApi extends RouteConcatenation with StrictLogging {
   this: ConfiguredCore =>
 
   logger.info("Starting service")
@@ -79,7 +80,7 @@ class SearchWebService(override val service: SearchService, override val baseUrl
 /**
  * The application that ties everything together and gets run on startup.
  */
-object WebApp extends App with BootedCore with ConfiguredCore with WebApi with Configuration {
+object WebApp extends App with BootedCore with ConfiguredCore with WebApi with Configuration with Loggers with StrictLogging {
 
   IO(Http)(system) ! Http.Bind(webService, "0.0.0.0", port = config.getInt("search.port"))
 
