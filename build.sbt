@@ -4,35 +4,28 @@ organization := "com.blinkbox.books"
 
 version := scala.util.Try(scala.io.Source.fromFile("VERSION").mkString.trim).getOrElse("0.0.0")
 
-scalaVersion  := "2.10.4"
+scalaVersion  := "2.11.4"
 
-scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-feature")
-
-resolvers += "spray" at "http://repo.spray.io/"
-
-resolvers += "Restlet" at "http://maven.restlet.org"
+scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.7", "-Xfatal-warnings", "-Xfuture")
 
 libraryDependencies ++= {
-  val akkaV = "2.3.2"
-  val sprayV = "1.3.1"
+  val akkaV = "2.3.7"
+  val sprayV = "1.3.2"
   val solrV = "4.8.0"
   Seq(
-    "com.blinkbox.books"  %%  "common-spray"    % "0.7.2",
-    "com.blinkbox.books"  %%  "common-config"   % "0.2.1",
-    "com.typesafe"        %%  "scalalogging-slf4j" % "1.1.0",
+    "com.blinkbox.books"  %%  "common-spray"    % "0.19.1",
+    "com.blinkbox.books"  %%  "common-config"   % "1.4.1",
+    "com.blinkbox.books"  %%  "common-scala-test"   % "0.3.0" % Test,
+//TODO!    "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
     "ch.qos.logback"      %   "logback-classic" % "1.1.2",
-    "org.scalatest"       %%  "scalatest"       % "2.2.0-RC1" % "test",
-    "org.mockito"         %   "mockito-core"    % "1.9.5" % "test",
-    "junit"               %   "junit"           % "4.11" % "test",
-    "com.novocode"        %   "junit-interface" % "0.10" % "test",
-    "io.spray"            %   "spray-testkit"   % sprayV  % "test",
-    "com.typesafe.akka"   %%  "akka-testkit"    % akkaV   % "test",
+    "io.spray"            %%   "spray-testkit"  % sprayV  % Test,
+    "com.typesafe.akka"   %%  "akka-testkit"    % akkaV   % Test,
     "commons-lang"        %   "commons-lang"    % "2.6",
     "com.google.guava"    %   "guava"           % "14.0.1",
     "com.google.code.findbugs" % "jsr305"       % "1.3.9",
     "org.apache.solr"     %   "solr-solrj"      % solrV,
     "commons-logging"     %   "commons-logging" % "1.1.3",
-    "org.apache.solr"     %   "solr-core"       % solrV % "test"
+    "org.apache.solr"     %   "solr-core"       % solrV % Test
   )
 }
 

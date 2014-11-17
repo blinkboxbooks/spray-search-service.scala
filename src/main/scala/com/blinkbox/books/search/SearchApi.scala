@@ -1,6 +1,7 @@
 package com.blinkbox.books.search
 
 import akka.util.Timeout
+import com.blinkbox.books.json.ExplicitTypeHints
 import com.blinkbox.books.search.SearchService._
 import com.blinkbox.books.spray.JsonFormats._
 import com.blinkbox.books.spray.Directives
@@ -12,12 +13,12 @@ import org.json4s.Serialization
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
+import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes._
 import spray.httpx.Json4sJacksonSupport
 import spray.httpx.marshalling.Marshaller
 import spray.routing.{ ExceptionHandler, HttpService, Route }
 import spray.util.LoggingContext
-import spray.http.HttpHeaders.RawHeader
 
 /**
  * API for search service, expressed as Spray routes.
@@ -38,19 +39,19 @@ trait SearchApi extends HttpService with Version1JsonSupport with Directives {
   
   override def responseTypeHints = EntityTypeHints
 
-  implicit def myExceptionHandler(implicit log: LoggingContext) =
-    ExceptionHandler {
-      case e: IllegalArgumentException =>
-        requestUri { uri => complete(BadRequest, s"Invalid request: ${e.getMessage}") }
-    }
+  val exceptionHandler = ExceptionHandler {
+    case e: IllegalArgumentException => complete(BadRequest, s"Invalid request: ${e.getMessage}")
+  }
 
   /**
    * The overall route for the service.
    */
-  lazy val route = respondWithSingletonHeader(RawHeader("Access-Control-Allow-Origin", corsOrigin)) {
-    get {
-      pathPrefix("search") {
-        searchForBooks ~ similarBooks ~ searchSuggestions
+  lazy val route = handleExceptions(exceptionHandler) {
+    respondWithSingletonHeader(RawHeader("Access-Control-Allow-Origin", corsOrigin)) {
+      get {
+        pathPrefix("search") {
+          searchForBooks ~ similarBooks ~ searchSuggestions
+        }
       }
     }
   }
