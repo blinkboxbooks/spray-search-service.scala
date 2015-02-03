@@ -21,12 +21,8 @@ import SearchApi._
 @RunWith(classOf[JUnitRunner])
 class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTest with MockitoSugar with SearchApi {
 
-  override val baseUrl = "service/search"
-  override val searchTimeout = 5
   override def service = mockService
-  override val corsOrigin = "*"
-  override val searchMaxAge = 100.seconds
-  override val autoCompleteMaxAge = 200.seconds
+  override val apiConfig = ApiConfig("localhost", 8080, "service/search", 5.seconds, "*", 100.seconds, 200.seconds)
 
   var mockService: SearchService = _
 
@@ -60,8 +56,8 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     Get("/search/books?q=some+words") ~> route ~> check {
       assert(status == OK &&
         contentType.value == "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8" &&
-        header("Access-Control-Allow-Origin").get.value == corsOrigin &&
-        header("Cache-Control").get.value == s"public, max-age=${searchMaxAge.toSeconds}")
+        header("Access-Control-Allow-Origin").get.value == apiConfig.corsOrigin &&
+        header("Cache-Control").get.value == s"public, max-age=${apiConfig.searchMaxAge.toSeconds}")
 
       // Check performed query, including default parameters.
       verify(service).search("some words", 0, 50, SortOrder("RELEVANCE", true))
@@ -172,8 +168,8 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
     Get("/search/suggestions?q=foo") ~> route ~> check {
       assert(status == OK &&
         contentType.value == "application/vnd.blinkboxbooks.data.v1+json; charset=UTF-8" &&
-        header("Access-Control-Allow-Origin").get.value == corsOrigin &&
-        header("Cache-Control").get.value == s"public, max-age=${autoCompleteMaxAge.toSeconds}")
+        header("Access-Control-Allow-Origin").get.value == apiConfig.corsOrigin &&
+        header("Cache-Control").get.value == s"public, max-age=${apiConfig.autoCompleteMaxAge.toSeconds}")
 
       // TODO!
       //      val result = parse(body.data.asString).extract[SuggestionsResult]
@@ -189,19 +185,14 @@ class SearchApiTests extends FunSuite with BeforeAndAfter with ScalatestRouteTes
 
       // Check query parameters in request.
       verify(service).suggestions("foo", offset, count)
-
-      // Check if the json response is correct
-      // TODO!
-      //      val result = parse(body.data.asString).extract[SuggestionsResult]
-      //      assert(result.items == suggestions)
     }
   }
 
   test("simple query for similar books") {
     Get(s"/search/books/$isbn/similar") ~> route ~> check {
       assert(status == OK &&
-        header("Access-Control-Allow-Origin").get.value == corsOrigin &&
-        header("Cache-Control").get.value == s"public, max-age=${searchMaxAge.toSeconds}")
+        header("Access-Control-Allow-Origin").get.value == apiConfig.corsOrigin &&
+        header("Cache-Control").get.value == s"public, max-age=${apiConfig.searchMaxAge.toSeconds}")
 
       // Check performed query, including default parameters.
       verify(service).findSimilar(isbn, 0, 10)

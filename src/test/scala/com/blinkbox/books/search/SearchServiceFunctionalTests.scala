@@ -8,7 +8,6 @@ import org.apache.commons.io.FileUtils
 import org.apache.solr.client.solrj.SolrServer
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer
 import org.apache.solr.core.CoreContainer
-import org.apache.solr.core.SolrConfig
 import org.apache.solr.core.SolrResourceLoader
 import org.apache.solr.core.ConfigSolr
 import org.apache.solr.common.SolrInputDocument
@@ -38,19 +37,16 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   var solrServer: SolrServer = _
   var searchService: SearchService = _
 
-  override val baseUrl = "service/search"
-  override val searchTimeout = 5
   override def service = searchService
-  override val corsOrigin = "*"
-  override val searchMaxAge = 100.seconds
-  override val autoCompleteMaxAge = 200.seconds
+  override val apiConfig = ApiConfig("localhost", 8080, "service/search", 5.seconds, "*", 100.seconds, 200.seconds)
+
   override implicit def actorRefFactory = system
 
   val SeriesCount = 5
 
-  val searchConfig = new SolrSearchConfig(Seq("free books", "free", "test free books"), 1.0, 1.5, 2.0, 3.0)
+  val searchConfig = new QueryConfig(Seq("free books", "free", "test free books"), 1.0, 1.5, 2.0, 3.0)
 
-  /** Set up the embdedded Solr instance once for all tests. */
+  /** Set up the embedded Solr instance once for all tests. */
   override def beforeAll(): Unit = {
     super.beforeAll()
 
@@ -405,4 +401,3 @@ class SearchServiceFunctionalTests extends FunSuite with BeforeAndAfterAll with 
   }
 
 }
-

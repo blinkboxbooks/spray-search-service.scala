@@ -11,9 +11,9 @@ import StandardSolrQueryProvider._
 @RunWith(classOf[JUnitRunner])
 class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
 
-  val searchConfig = new SolrSearchConfig(Seq("free books", "free", "test free books"), 2.0, 2.5, 3.0, 4.0)
+  val queryConfig = new QueryConfig(Seq("free books", "free", "test free books"), 2.0, 2.5, 3.0, 4.0)
 
-  val provider: StandardSolrQueryProvider = new StandardSolrQueryProvider(searchConfig)
+  val provider: StandardSolrQueryProvider = new StandardSolrQueryProvider(queryConfig)
 
   test("search with empty query") {
     intercept[Exception] { queryString("") }
@@ -120,4 +120,3 @@ class SolrQueryProviderTests extends FunSuite with BeforeAndAfter {
       + "' should be lowercased, and otherwise unchanged")
 
 }
-

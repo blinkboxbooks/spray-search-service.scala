@@ -30,7 +30,7 @@ trait SolrQueryProvider {
 /**
  *  Wraps up the query processing as done in the previous version of the search service.
  */
-class StandardSolrQueryProvider(val config: SolrSearchConfig) extends SolrQueryProvider {
+class StandardSolrQueryProvider(val config: QueryConfig) extends SolrQueryProvider {
 
   import StandardSolrQueryProvider._
 

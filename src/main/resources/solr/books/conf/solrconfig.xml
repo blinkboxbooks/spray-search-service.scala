@@ -3,11 +3,6 @@
 <config>
   <luceneMatchVersion>LUCENE_40</luceneMatchVersion>
 
-<!--  
-  <lib dir="../../solr-lib/dist" regex="apache-solr-dataimporthandler-.*\.jar" />
-  <lib dir="../../solr-lib/dist/lib" regex="mysql-connector-java-.*\.jar" />
--->
- 
   <jmx />
 
   <updateHandler class="solr.DirectUpdateHandler2">
@@ -75,14 +70,6 @@
 
   <requestHandler name="/analysis/field" class="solr.FieldAnalysisRequestHandler" />
   
-  <!--
-  <requestHandler name="/search" class="org.apache.solr.handler.component.SearchHandler">
-    <lst name="defaults">
-      <str name="echoParams">explicit</str>
-    </lst>
-  </requestHandler>
-  -->
-  
   <requestHandler name="/update" class="solr.UpdateRequestHandler"  />
 
   <requestHandler name="/admin/" class="org.apache.solr.handler.admin.AdminHandlers" />
@@ -96,14 +83,6 @@
     </lst>
   </requestHandler>
 
-<!--
-  <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
-    <lst name="defaults">
-        <str name="config">solr-data-config.xml</str>
-    </lst>
-  </requestHandler>
--->
-
   <requestHandler name="/replication" class="solr.ReplicationHandler" >
 	<lst name="master">
 		<str name="replicateAfter">commit</str>
@@ -112,22 +91,16 @@
 	</lst>
   </requestHandler>
 
-<requestHandler name="/mlt" class="solr.MoreLikeThisHandler">
-	<lst name="defaults">
-		<str name="mlt.fl">author_exact_field,keywords,bisac_subject,title,description</str>
-		<str name="mlt.qf">author_exact_field^10.0 keywords bisac_subject^3.0 title description^3.0</str>
-		<str name="mlt.mintf">1</str>
-		<str name="mlt.mindf">1</str>
-		<str name="mlt.minwl">3</str>
-		<str name="mlt.match.include">true</str>
-	</lst>
-</requestHandler>
-
-<!--  
-  <queryResponseWriter name="xslt" class="solr.XSLTResponseWriter">
-    <int name="xsltCacheLifetimeSeconds">5</int>
-  </queryResponseWriter> 
--->
+	<requestHandler name="/mlt" class="solr.MoreLikeThisHandler">
+		<lst name="defaults">
+			<str name="mlt.fl">author_exact_field,keywords,bisac_subject,title,description</str>
+			<str name="mlt.qf">author_exact_field^10.0 keywords bisac_subject^3.0 title description^3.0</str>
+			<str name="mlt.mintf">1</str>
+			<str name="mlt.mindf">1</str>
+			<str name="mlt.minwl">3</str>
+			<str name="mlt.match.include">true</str>
+		</lst>
+	</requestHandler>
 
   <admin>
     <defaultQuery>*:*</defaultQuery>

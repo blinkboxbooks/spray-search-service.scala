@@ -28,15 +28,11 @@ trait SearchApi extends HttpService with Version1JsonSupport with Directives {
   import SearchApi._
 
   // Abstract definitions, to be provided by concrete implementations.
-  val baseUrl: String
-  val searchTimeout: Int
   def service: SearchService
-  val corsOrigin: String
-  val searchMaxAge: Duration
-  val autoCompleteMaxAge: Duration
+  val apiConfig: ApiConfig
 
-  implicit val timeout = Timeout(searchTimeout.seconds)
-  
+  implicit lazy val timeout = Timeout(apiConfig.searchTimeout)
+
   override def responseTypeHints = EntityTypeHints
 
   val exceptionHandler = ExceptionHandler {
@@ -47,7 +43,7 @@ trait SearchApi extends HttpService with Version1JsonSupport with Directives {
    * The overall route for the service.
    */
   lazy val route = handleExceptions(exceptionHandler) {
-    respondWithSingletonHeader(RawHeader("Access-Control-Allow-Origin", corsOrigin)) {
+    respondWithSingletonHeader(RawHeader("Access-Control-Allow-Origin", apiConfig.corsOrigin)) {
       get {
         pathPrefix("search") {
           searchForBooks ~ similarBooks ~ searchSuggestions
@@ -66,8 +62,8 @@ trait SearchApi extends HttpService with Version1JsonSupport with Directives {
           parameters('q) { query =>
             val result = service.search(query, page.offset, page.count, sortOrder)
             onSuccess(result) { result =>
-              cacheable(searchMaxAge, QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
-                links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books")))
+              cacheable(apiConfig.searchMaxAge, QuerySearchResult(query, result.numberOfResults, result.suggestions, result.books,
+                links(Some(result.numberOfResults.toInt), page.offset, page.count, s"${apiConfig.path}/books")))
             }
           }
         }
@@ -82,8 +78,8 @@ trait SearchApi extends HttpService with Version1JsonSupport with Directives {
       paged(defaultCount = 10) { page =>
         val result = service.findSimilar(id, page.offset, page.count)
         onSuccess(result) { result =>
-          cacheable(searchMaxAge, SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
-            links(Some(result.numberOfResults.toInt), page.offset, page.count, s"$baseUrl/books/$id/similar")))
+          cacheable(apiConfig.searchMaxAge, SimilarBooksSearchResult(id, result.numberOfResults, Seq(), result.books,
+            links(Some(result.numberOfResults.toInt), page.offset, page.count, s"${apiConfig.path}/books/$id/similar")))
         }
       }
     }
@@ -98,7 +94,7 @@ trait SearchApi extends HttpService with Version1JsonSupport with Directives {
           val result = service.suggestions(query, page.offset, page.count)
           implicit val typedJacksonFormats = blinkboxFormat()
           onSuccess(result) { suggestions =>
-            cacheable(autoCompleteMaxAge, SuggestionsResult(suggestions))
+            cacheable(apiConfig.autoCompleteMaxAge, SuggestionsResult(suggestions))
           }
         }
       }

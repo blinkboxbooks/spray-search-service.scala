@@ -3,6 +3,8 @@ package com.blinkbox.books.search;
 /**
  * SOLR query string builder.
  * 
+ * Consider replacing this by using Lucene's QueryBuilder instead. 
+ * 
  * @author Chris
  */
 public class QueryBuilder {

@@ -10,17 +10,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class SolrSearchConfig(
-  val freeQueries: Seq[String],
-  val nameBoost: Double,
-  val contentBoost: Double,
-  val exactAuthorBoost: Double,
-  val exactTitleBoost: Double) {
-
-  require(freeQueries.size > 0, "Must be configured with at least one search term for free books")
-}
-
-class SolrSearchService(config: SolrSearchConfig, solrServer: SolrServer) extends SearchService {
+class SolrSearchService(config: QueryConfig, solrServer: SolrServer) extends SearchService {
 
   import SolrConstants._
   import SolrUtils._
