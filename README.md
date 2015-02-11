@@ -93,7 +93,8 @@ Example response:
       ]
     }
   ]
-}```
+}
+```
 
 ### Similar books
 
